@@ -1,0 +1,2889 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --navy: #1B2A4A;
+    --navy-light: #2A3F68;
+    --gold: #C9A24B;
+    --gold-light: #F5EDD8;
+    --red: #C0504D;
+    --orange: #E0A030;
+    --yellow: #D9B84A;
+    --green: #4C8A5E;
+    --blue: #2E5A88;
+    --purple: #6B4C8A;
+    --gray-50: #F7F7F8;
+    --gray-100: #EFEFF1;
+    --gray-300: #D7D7DC;
+    --gray-500: #8A8A93;
+    --gray-700: #4A4A54;
+    --white: #FFFFFF;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(27,42,74,0.08), 0 1px 2px rgba(27,42,74,0.06);
+    --shadow-md: 0 4px 12px rgba(27,42,74,0.12);
+  }
+  * { box-sizing: border-box; }
+  #gsc-app {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    color: var(--navy);
+    background: var(--gray-50);
+    min-height: 100%;
+    padding: 0;
+  }
+  #gsc-app h1, #gsc-app h2, #gsc-app h3 { margin: 0; }
+
+  .gsc-header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: var(--white);
+    padding: 20px 24px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .gsc-header .eyebrow {
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .gsc-header h1 { font-size: 22px; font-weight: 700; }
+  .gsc-header .sub { font-size: 13px; color: #C9D2E3; margin-top: 4px; }
+
+  .gsc-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px 0 16px;
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-300);
+    overflow-x: auto;
+  }
+  .gsc-tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-500);
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    transition: all .15s;
+  }
+  .gsc-tab:hover { color: var(--navy); background: var(--gray-50); }
+  .gsc-tab.active { color: var(--navy); border-bottom: 3px solid var(--gold); background: var(--gray-50); }
+
+  .gsc-body { padding: 18px 20px 40px 20px; background: var(--white); }
+
+  /* ---------- Dashboard cards ---------- */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .kpi-card {
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .kpi-card .kpi-label { font-size: 11px; color: var(--gray-500); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+  .kpi-card .kpi-value { font-size: 26px; font-weight: 700; color: var(--navy); margin-top: 4px; }
+  .kpi-card.accent-gold { border-top: 3px solid var(--gold); }
+  .kpi-card.accent-green { border-top: 3px solid var(--green); }
+  .kpi-card.accent-red { border-top: 3px solid var(--red); }
+  .kpi-card.accent-blue { border-top: 3px solid var(--blue); }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 22px 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--gold-light);
+  }
+
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+  .bar-label { width: 190px; flex-shrink: 0; color: var(--gray-700); font-weight: 600; }
+  .bar-track { flex: 1; background: var(--gray-100); border-radius: 4px; height: 18px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+  .bar-count { width: 30px; text-align: right; font-weight: 700; color: var(--navy); }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 6px; border: none;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .88; }
+  .btn-primary { background: var(--navy); color: var(--white); }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-outline { background: var(--white); color: var(--navy); border: 1px solid var(--gray-300); }
+  .btn-danger { background: var(--red); color: var(--white); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .filter-select {
+    padding: 7px 10px; border-radius: 6px; border: 1px solid var(--gray-300);
+    font-size: 13px; color: var(--navy); background: var(--white);
+  }
+
+  /* ---------- Table ---------- */
+  .gsc-table-wrap { overflow-x: auto; border: 1px solid var(--gray-300); border-radius: var(--radius); }
+  table.gsc-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 1100px; }
+  table.gsc-table th {
+    background: var(--navy); color: var(--white); text-align: left;
+    padding: 9px 10px; font-weight: 600; font-size: 11.5px;
+    position: sticky; top: 0;
+  }
+  table.gsc-table td { padding: 8px 10px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+  table.gsc-table tr:hover td { background: var(--gray-50); }
+  .badge {
+    display: inline-block; padding: 3px 9px; border-radius: 12px;
+    font-size: 11px; font-weight: 700; color: var(--white); white-space: nowrap;
+  }
+  .row-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    border: none; background: var(--gray-100); color: var(--navy);
+    width: 26px; height: 26px; border-radius: 5px; cursor: pointer; font-size: 13px;
+  }
+  .icon-btn:hover { background: var(--gold-light); }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--gray-500); }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(27,42,74,.45);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 30px 16px; overflow-y: auto; z-index: 1000;
+  }
+  .modal-box {
+    background: var(--white); border-radius: var(--radius); width: 100%; max-width: 640px;
+    box-shadow: var(--shadow-md); max-height: 92vh; display: flex; flex-direction: column;
+  }
+  .modal-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--gray-300);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-header h3 { font-size: 16px; color: var(--navy); }
+  .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--gray-500); }
+  .modal-body { padding: 18px 20px; overflow-y: auto; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--gray-300); display: flex; justify-content: flex-end; gap: 10px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-field { display: flex; flex-direction: column; gap: 4px; }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label { font-size: 11.5px; font-weight: 700; color: var(--gray-700); text-transform: uppercase; letter-spacing: .3px; }
+  .form-field input, .form-field select, .form-field textarea {
+    padding: 8px 10px; border: 1px solid var(--gray-300); border-radius: 6px;
+    font-size: 13px; font-family: inherit; color: var(--navy);
+  }
+  .form-field textarea { resize: vertical; min-height: 50px; }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+    outline: 2px solid var(--gold); outline-offset: 1px; border-color: var(--gold);
+  }
+  .score-preview {
+    background: var(--gold-light); border-radius: 6px; padding: 10px 12px;
+    font-size: 12.5px; color: var(--navy); margin-top: 6px; display: flex; justify-content: space-between; align-items: center;
+  }
+
+  /* ---------- Kanban ---------- */
+  .kanban-board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; }
+  .kanban-col { flex: 0 0 240px; background: var(--gray-50); border-radius: var(--radius); border: 1px solid var(--gray-300); display: flex; flex-direction: column; max-height: 640px; }
+  .kanban-col-header { padding: 10px 12px; border-radius: var(--radius) var(--radius) 0 0; color: var(--white); font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .kanban-col-body { padding: 8px; overflow-y: auto; flex: 1; }
+  .kanban-card {
+    background: var(--white); border: 1px solid var(--gray-300); border-radius: 6px;
+    padding: 10px; margin-bottom: 8px; box-shadow: var(--shadow); cursor: pointer;
+  }
+  .kanban-card:hover { box-shadow: var(--shadow-md); }
+  .kanban-card .kc-name { font-weight: 700; font-size: 12.5px; color: var(--navy); }
+  .kanban-card .kc-meta { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+  .kanban-card .kc-score { display: inline-block; margin-top: 6px; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 10px; color: var(--white); }
+  .kanban-card-actions { display: flex; gap: 4px; margin-top: 8px; }
+  .kanban-empty { font-size: 11px; color: var(--gray-500); text-align: center; padding: 14px 6px; }
+
+  /* ---------- Diagnostic ---------- */
+  .diag-select-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .diag-step { border: 1px solid var(--gray-300); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+  .diag-step-header { background: var(--navy); color: var(--white); padding: 10px 14px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .diag-q { padding: 10px 14px; border-top: 1px solid var(--gray-100); }
+  .diag-q-text { font-size: 13px; color: var(--navy); margin-bottom: 8px; }
+  .diag-options { display: flex; gap: 16px; }
+  .diag-options label { font-size: 12.5px; display: flex; align-items: center; gap: 5px; cursor: pointer; color: var(--gray-700); }
+  .diag-result-box { background: var(--gold-light); border: 1px solid var(--gold); border-radius: var(--radius); padding: 16px; margin-top: 16px; }
+  .diag-result-box .dr-line { margin-bottom: 8px; font-size: 13.5px; }
+  .diag-result-box .dr-label { font-weight: 700; color: var(--navy); }
+
+  /* ---------- Toast ---------- */
+  #gsc-toast {
+    position: fixed; bottom: 20px; right: 20px; background: var(--navy); color: var(--white);
+    padding: 10px 16px; border-radius: 6px; font-size: 12.5px; font-weight: 600;
+    box-shadow: var(--shadow-md); opacity: 0; transform: translateY(10px);
+    transition: all .25s; pointer-events: none; z-index: 2000; display: flex; align-items: center; gap: 8px;
+  }
+  #gsc-toast.show { opacity: 1; transform: translateY(0); }
+  #gsc-toast .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+  .shared-note {
+    font-size: 11.5px; color: var(--gray-500); background: var(--gray-50);
+    border: 1px dashed var(--gray-300); border-radius: 6px; padding: 8px 12px; margin-bottom: 16px;
+  }
+
+  /* ---------- Devis ---------- */
+  .devis-line {
+    display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+    border: 1px solid var(--gray-300); border-radius: var(--radius); margin-bottom: 8px; background: var(--white);
+  }
+  .devis-line.excluded { opacity: .5; }
+  .devis-line input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0; }
+  .devis-line-body { flex: 1; min-width: 0; }
+  .devis-line-title { font-size: 13px; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .devis-line-offre { font-size: 12px; color: var(--gray-700); margin-top: 3px; }
+  .devis-line-price { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .devis-line-price input {
+    width: 100px; text-align: right; padding: 6px 8px; border: 1px solid var(--gray-300);
+    border-radius: 6px; font-size: 13px; font-weight: 700; color: var(--navy); font-family: inherit;
+  }
+  .devis-summary {
+    background: var(--gold-light); border: 1px solid var(--gold); border-radius: var(--radius);
+    padding: 16px 18px; margin: 18px 0;
+  }
+  .devis-summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; margin-bottom: 8px; gap: 16px; }
+  .devis-summary-row.total { font-size: 18px; font-weight: 700; color: var(--navy); border-top: 1px solid var(--gold); padding-top: 10px; margin-top: 4px; margin-bottom: 0; }
+  .devis-remise-input { display: flex; align-items: center; gap: 6px; }
+  .devis-remise-input input {
+    width: 60px; text-align: right; padding: 5px 7px; border: 1px solid var(--gray-300);
+    border-radius: 6px; font-size: 13px; font-weight: 700; color: var(--navy); font-family: inherit;
+  }
+  .pack-suggestion {
+    background: #EAF2E9; border: 1px solid var(--green); border-radius: 6px;
+    padding: 10px 12px; font-size: 12.5px; color: var(--navy); margin-bottom: 14px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  .devis-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+  /* ---------- Tarifs (pricing config) ---------- */
+  .tarif-row {
+    display: grid; grid-template-columns: 2fr 1fr 3fr 1fr; gap: 10px; align-items: center;
+    padding: 10px 12px; border-bottom: 1px solid var(--gray-100); font-size: 12.5px;
+  }
+  .tarif-row.head { font-weight: 700; color: var(--white); background: var(--navy); border-radius: 6px 6px 0 0; }
+  .tarif-row input {
+    width: 100%; padding: 6px 8px; border: 1px solid var(--gray-300); border-radius: 6px;
+    font-size: 13px; font-weight: 700; color: var(--navy); background: #FFFBEA; font-family: inherit; text-align: right;
+  }
+  .pack-config-card {
+    border: 1px solid var(--gray-300); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+  }
+  .pack-config-card .pc-name { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .pack-config-card .pc-steps { font-size: 11.5px; color: var(--gray-500); margin-top: 2px; }
+  .pack-config-card .pc-fields { display: flex; align-items: center; gap: 14px; }
+  .pack-config-card .pc-field { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .pack-config-card .pc-field label { font-size: 10.5px; color: var(--gray-500); text-transform: uppercase; }
+  .pack-config-card .pc-field input {
+    width: 90px; padding: 6px 8px; border: 1px solid var(--gray-300); border-radius: 6px;
+    font-size: 13px; font-weight: 700; color: var(--navy); background: #FFFBEA; text-align: right; font-family: inherit;
+  }
+
+  @media (max-width: 720px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .bar-label { width: 130px; font-size: 11.5px; }
+  }
+</style>
+
+<div id="gsc-app">
+  <div class="gsc-header">
+    <div>
+      <div class="eyebrow">GSC BUSINESS CENTER</div>
+      <h1>Plateforme Prospects &amp; Diagnostic</h1>
+      <div class="sub">CRM · Pipeline · Diagnostic — enregistrement automatique à chaque modification</div>
+    </div>
+    <div id="gsc-sync-badge"></div>
+  </div>
+
+  <div class="gsc-tabs" id="gsc-tabs"></div>
+  <div class="gsc-body" id="gsc-body"></div>
+</div>
+
+<div id="gsc-toast"><span class="dot"></span><span id="gsc-toast-text">Enregistré automatiquement</span></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // =========================================================
+  // DATA MODEL
+  // =========================================================
+  // ⚠️ CONFIGURATION REQUISE — à faire une seule fois :
+  // 1. Déployez le fichier GSC_Backend_AppsScript.gs comme Application Web
+  //    (voir les instructions en haut de ce fichier .gs)
+  // 2. Collez ici l'URL obtenue (ex. https://script.google.com/macros/s/XXXXX/exec)
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw7D54YswYtnIviQC7lVa0wqcM9QXBrAHY5Aa73lPEGND35uVsmGszBY_JO6j94p9H9/exec";
+
+  // ⚠️ CONFIGURATION REQUISE (2/2) — pont vers 03_Plateforme_Accompagnements.html :
+  // 1. Déployez le fichier GSC_Backend_Pont_Clients.gs comme Application Web
+  //    (voir les instructions en haut de ce fichier .gs — c'est un script
+  //    SÉPARÉ du backend prospects ci-dessus, il n'y touche pas).
+  // 2. Collez l'URL obtenue ici, ET dans 03_Plateforme_Accompagnements.html
+  //    (même constante CLIENT_BRIDGE_WEBAPP_URL dans les deux fichiers).
+  const CLIENT_BRIDGE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxc_9QNsMpZg8Qba9PT3VYGyv0oZYcPcf8Vbt4EH3iS9xGiGhDaDwdPt7rsU2IeX6J2/exec";
+
+  // ⚠️ CONFIGURATION REQUISE (3/3, facultative) — pont vers le Tableau de bord KPI
+  // (04_Tableau_Bord_GSC.html) :
+  // 1. Déployez le fichier GSC_Backend_CA.gs comme Application Web (voir
+  //    instructions en haut de ce fichier .gs — script SÉPARÉ, indépendant).
+  // 2. Collez l'URL obtenue ici, ET dans 04_Tableau_Bord_GSC.html (constante
+  //    CA_URL — les deux fichiers doivent pointer vers le MÊME backend).
+  // Tant que ce n'est pas configuré, le pipeline fonctionne normalement ;
+  // seul le comptage automatique du chiffre d'affaires est inactif.
+  const CA_BRIDGE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz_REMPLACEZ_PAR_URL_BACKEND_CA/exec";
+
+  const STATUTS = [
+    { id: "Nouveau prospect", color: "#2E5A88" },
+    { id: "Contacté", color: "#8A6D3B" },
+    { id: "RDV programmé", color: "#E0A030" },
+    { id: "RDV réalisé (diagnostic fait)", color: "#6B4C8A" },
+    { id: "Devis envoyé", color: "#C97A2B" },
+    { id: "Signé / Client", color: "#4C8A5E" },
+    { id: "Perdu / Sans réponse", color: "#C0504D" },
+  ];
+  const STATUT_COLORS = Object.fromEntries(STATUTS.map(s => [s.id, s.color]));
+
+  // Coordonnées utilisées dans les modèles de message (onglet Messages).
+  const GSC_CALENDLY_URL = "https://calendly.com/consulting-globalservice/30min";
+  const GSC_WHATSAPP_DISPLAY = "+221 78 822 84 16";
+
+  // =========================================================
+  // BIBLIOTHÈQUE DE MESSAGES — relance & marketing par statut du pipeline
+  // (tous les statuts sauf "Signé / Client", qui n'a plus besoin de relance).
+  // Variables disponibles dans le texte : {{prenom}}, {{entreprise}}, {{consultant}},
+  // {{lien_calendly}}, {{whatsapp_gsc}}.
+  // =========================================================
+  const MESSAGE_TEMPLATES = {
+    "Nouveau prospect": [
+      { id: "relance", label: "Premier contact",
+        text: "Bonjour {{prenom}} 👋\n\nMerci d'avoir complété le diagnostic GSC Business Center pour {{entreprise}}.\n\nJe suis {{consultant}}, votre interlocuteur(trice) chez GSC. J'aimerais convenir de 30 minutes pour faire le point ensemble, gratuitement, sur où vous en êtes et ce qui vous bloque.\n\nQuel jour vous conviendrait cette semaine ?" },
+      { id: "marketing", label: "Message de valeur",
+        text: "Bonjour {{prenom}} 👋\n\nLa plupart des porteurs de projet stagnent non pas par manque d'idée, mais par manque de méthode.\n\nChez GSC Business Center, nous accompagnons les entrepreneurs avec la Méthode GSC en 10 étapes : de la clarification du projet jusqu'à la liberté entrepreneuriale.\n\nRéservez votre diagnostic gratuit (30 min, sans engagement) : {{lien_calendly}}" },
+    ],
+    "Contacté": [
+      { id: "relance", label: "Relance prise de RDV",
+        text: "Bonjour {{prenom}} 👋\n\nJe reviens vers vous suite à notre échange concernant {{entreprise}}. Avez-vous pu regarder les créneaux pour votre diagnostic gratuit ?\n\nVoici le lien pour réserver directement : {{lien_calendly}}\n\nJe reste disponible si vous avez des questions avant." },
+      { id: "marketing", label: "Relance avec preuve sociale",
+        text: "Bonjour {{prenom}} 👋\n\nNous accompagnons régulièrement des porteurs de projet comme vous à structurer leur activité avec la Méthode GSC en 10 étapes — de l'idée jusqu'à des résultats concrets et mesurables.\n\nSi {{entreprise}} vous tient à cœur, 30 minutes suffisent pour un diagnostic clair de votre situation : {{lien_calendly}}\n\nÀ très vite, {{consultant}}." },
+    ],
+    "RDV programmé": [
+      { id: "relance", label: "Rappel de rendez-vous",
+        text: "Bonjour {{prenom}} 👋\n\nPetit rappel : nous avons rendez-vous pour votre diagnostic gratuit concernant {{entreprise}}.\n\nMerci de confirmer votre disponibilité, et n'hésitez pas si vous devez décaler — je m'adapte volontiers.\n\nÀ bientôt, {{consultant}}." },
+      { id: "marketing", label: "Rappel + ce que vous allez en retirer",
+        text: "Bonjour {{prenom}} 👋\n\nVotre rendez-vous diagnostic approche ! Pour {{entreprise}}, nous allons ensemble :\n• clarifier où vous en êtes réellement,\n• identifier votre principal point de blocage,\n• repartir avec 1 à 2 actions concrètes à mettre en place.\n\nConfirmez-vous toujours votre créneau ? {{consultant}}" },
+    ],
+    "RDV réalisé (diagnostic fait)": [
+      { id: "relance", label: "Suivi post-diagnostic",
+        text: "Bonjour {{prenom}} 👋\n\nMerci pour notre échange sur {{entreprise}}, c'était un plaisir d'en parler avec vous.\n\nComme convenu, je vous prépare une proposition d'accompagnement adaptée à ce que nous avons identifié ensemble. Je vous l'envoie sous peu.\n\nEn attendant, n'hésitez pas si des questions vous viennent." },
+      { id: "marketing", label: "Recap valeur + prochaine étape",
+        text: "Bonjour {{prenom}} 👋\n\nSuite à notre diagnostic sur {{entreprise}}, un point clair : avec la bonne méthode, les blocages identifiés se résolvent étape par étape — pas d'un coup, mais avec un chemin structuré.\n\nJe vous envoie votre devis personnalisé très bientôt. Vous pourrez alors choisir le format d'accompagnement qui vous convient le mieux.\n\n{{consultant}}" },
+    ],
+    "Devis envoyé": [
+      { id: "relance", label: "Relance devis",
+        text: "Bonjour {{prenom}} 👋\n\nJe reviens vers vous concernant le devis envoyé pour l'accompagnement de {{entreprise}}. Avez-vous eu l'occasion d'y jeter un œil ?\n\nJe reste disponible pour répondre à toute question (prix, contenu, délais) ou ajuster la proposition si besoin.\n\n{{consultant}}" },
+      { id: "marketing", label: "Relance avec urgence douce",
+        text: "Bonjour {{prenom}} 👋\n\nNos places d'accompagnement pour ce mois-ci se remplissent progressivement. Je voulais m'assurer que vous ayez toutes les informations nécessaires pour {{entreprise}} avant de trancher.\n\nSi le prix est un frein, on peut aussi regarder ensemble un format allégé qui correspond à votre budget.\n\nOn en parle cette semaine ? {{consultant}}" },
+    ],
+    "Perdu / Sans réponse": [
+      { id: "relance", label: "Réactivation douce",
+        text: "Bonjour {{prenom}} 👋\n\nJe me permets de reprendre contact au sujet de {{entreprise}}. Je comprends que le timing n'était peut-être pas le bon.\n\nSi votre projet est toujours d'actualité, la porte reste ouverte — dites-moi simplement où vous en êtes et je m'adapte.\n\n{{consultant}}" },
+      { id: "marketing", label: "Nouvelle offre / nouveau départ",
+        text: "Bonjour {{prenom}} 👋\n\nÇa fait un moment que nous n'avons pas échangé sur {{entreprise}}. Beaucoup de porteurs de projet reprennent leur élan après une pause — c'est aussi ça, entreprendre.\n\nSi vous voulez repartir sur de bonnes bases, un diagnostic gratuit de 30 min peut vous aider à y voir clair : {{lien_calendly}}\n\nAu plaisir d'en reparler, {{consultant}}." },
+    ],
+  };
+
+  const CANAUX = ["Facebook Ads", "Instagram Ads", "TikTok Ads", "Google Ads", "Organique (réseaux)", "Partenariat institutionnel", "Recommandation client", "Import Excel", "Autre"];
+  const SECTEURS = ["Commerce / Vente de produits", "Artisanat / Production locale", "Services aux particuliers", "Services aux entreprises", "Restauration / Agroalimentaire", "Cosmétique / Bien-être", "Technologie / Digital", "Agriculture / Agrobusiness", "Autre"];
+  const STADES = ["Je n'ai qu'une idée, rien n'est encore lancé", "Je viens de lancer (moins d'1 an d'activité)", "Mon activité tourne depuis 1 à 3 ans", "Mon activité tourne depuis plus de 3 ans"];
+  const DISPOS = ["Cette semaine", "La semaine prochaine", "Dans les 2 prochaines semaines", "Je ne sais pas encore, à convenir"];
+  const CANAL_CONTACT = ["WhatsApp", "Appel téléphonique", "Email"];
+  const OUI_PARTIEL_NON = ["Oui", "Partiel", "Non"];
+
+  const DIAG_STEPS = [
+    { num: 1, name: "Clarification du projet", priorite: "Bloquante",
+      questions: [
+        "Le porteur de projet peut décrire son projet, sa cible et le problème résolu en une phrase claire",
+        "Une fiche de clarification écrite existe (mission, cible, problème, offre de valeur)",
+        "Le projet n'a pas changé de direction plusieurs fois sans base validée",
+      ], proposition: "Atelier de clarification de projet + Value Proposition Canvas" },
+    { num: 2, name: "Validation du marché", priorite: "Bloquante",
+      questions: [
+        "Au moins 5 à 10 personnes de la cible ont été interrogées avant le lancement",
+        "Une analyse des concurrents directs/indirects a été réalisée",
+        "L'hypothèse de rentabilité (prix, demande) a été testée sur le terrain",
+      ], proposition: "Grille d'analyse concurrentielle + mini-sondage terrain (5-10 entretiens)" },
+    { num: 3, name: "Structuration du business", priorite: "Bloquante",
+      questions: [
+        "Une grille tarifaire fixe existe (pas de prix négociés au cas par cas)",
+        "Le Business Model Canvas (ou équivalent) a été formalisé",
+        "Les processus clés sont écrits, pas seulement dans la tête du dirigeant",
+      ], proposition: "Atelier Business Model Canvas + grille tarifaire type + formalisation des processus" },
+    { num: 4, name: "Positionnement et marque", priorite: "Importante",
+      questions: [
+        "La promesse de marque tient en une phrase claire et différenciante",
+        "Une charte graphique existe (logo, couleurs, typographie)",
+        "La communication est cohérente d'une publication à l'autre",
+      ], proposition: "Brand Platform Canvas + charte graphique simplifiée" },
+    { num: 5, name: "Acquisition client", priorite: "Bloquante",
+      questions: [
+        "2 à 3 canaux d'acquisition prioritaires sont identifiés et utilisés régulièrement",
+        "Un flux régulier et mesurable de nouveaux prospects est généré chaque mois",
+        "Un outil de suivi des prospects (CRM, tableau) est utilisé",
+      ], proposition: "Plan d'action commercial + mise en place d'un CRM/outil de suivi des prospects" },
+    { num: 6, name: "Conversion et vente", priorite: "Bloquante",
+      questions: [
+        "Une trame d'entretien de vente structurée est utilisée systématiquement",
+        "Les devis envoyés sont relancés systématiquement (sous 5 jours)",
+        "Le taux de conversion prospect → client est connu et suivi",
+      ], proposition: "Trame d'entretien de vente + grille de traitement des objections + relance automatisée des devis" },
+    { num: 7, name: "Livraison et satisfaction", priorite: "Importante",
+      questions: [
+        "Chaque mission démarre par un point de lancement (kick-off) structuré",
+        "Un questionnaire de satisfaction est envoyé systématiquement en fin de mission",
+        "Un pourcentage significatif de clients reviennent ou recommandent l'entreprise",
+      ], proposition: "Fiche de suivi de mission + questionnaire de satisfaction automatisé" },
+    { num: 8, name: "Automatisation et système", priorite: "Importante",
+      questions: [
+        "Des modèles/documents réutilisables existent pour les tâches répétitives",
+        "Un outil de gestion de projet (Kanban ou équivalent) centralise les missions en cours",
+        "L'activité peut continuer normalement si le dirigeant est absent une semaine",
+      ], proposition: "Bibliothèque de modèles réutilisables + tableau Kanban + automatisations Zapier" },
+    { num: 9, name: "Développement et croissance", priorite: "Secondaire",
+      questions: [
+        "Un tableau de bord d'indicateurs clés (KPI) est mis à jour chaque mois",
+        "Un bilan des résultats est réalisé au moins une fois par trimestre",
+        "L'entreprise sait quel canal ou quelle offre est le plus rentable",
+      ], proposition: "Tableau de bord KPI + automatisation du reporting mensuel" },
+    { num: 10, name: "Impact et liberté", priorite: "Secondaire",
+      questions: [
+        "Au moins une partie des tâches est déléguée à une équipe ou un prestataire",
+        "Une vision stratégique écrite existe à horizon 3 ans",
+        "Un bilan d'impact est réalisé au moins une fois par an",
+      ], proposition: "Plan de délégation par fonction + vision stratégique à 3 ans" },
+  ];
+  const PRIO_COLOR = { "Bloquante": "#C0504D", "Importante": "#E0A030", "Secondaire": "#D9B84A" };
+
+  // =========================================================
+  // GRILLE TARIFAIRE (issue de GSC_Grille_Tarifaire_Methode_Léger.xlsx)
+  // Prix et remises modifiables dans l'onglet "Tarifs", enregistrés
+  // dans ce navigateur (localStorage) — ne dépend pas du backend Sheets.
+  // =========================================================
+  const PRICING_STORAGE_KEY = "gsc_pricing_config_v1";
+
+  function defaultPricingConfig() {
+    return {
+      steps: {
+        1: { prix: 35000, offre: "Atelier de clarification de projet + Value Proposition Canvas", duree: "1 semaine" },
+        2: { prix: 45000, offre: "Grille d'analyse concurrentielle + mini-sondage terrain (5-10 entretiens)", duree: "2 semaines" },
+        3: { prix: 60000, offre: "Atelier Business Model Canvas + grille tarifaire type + formalisation des processus", duree: "2 semaines" },
+        4: { prix: 45000, offre: "Brand Platform Canvas + charte graphique simplifiée", duree: "2 semaines" },
+        5: { prix: 55000, offre: "Plan d'action commercial + mise en place d'un CRM/outil de suivi des prospects", duree: "2 semaines" },
+        6: { prix: 35000, offre: "Trame d'entretien de vente + grille de traitement des objections + relance automatisée des devis", duree: "1 semaine" },
+        7: { prix: 25000, offre: "Fiche de suivi de mission + questionnaire de satisfaction automatisé", duree: "1 semaine" },
+        8: { prix: 50000, offre: "Bibliothèque de modèles réutilisables + tableau Kanban + automatisations Zapier", duree: "2 semaines" },
+        9: { prix: 30000, offre: "Tableau de bord KPI + automatisation du reporting mensuel", duree: "1 semaine" },
+        10: { prix: 25000, offre: "Plan de délégation par fonction + vision stratégique à 3 ans", duree: "1 semaine" },
+      },
+      packs: {
+        fondations: { nom: "Pack Fondations", steps: [1, 2, 3, 5, 6], remise: 0.15 },
+        renforcement: { nom: "Pack Renforcement", steps: [4, 7, 8], remise: 0.10 },
+        croissance: { nom: "Pack Croissance", steps: [9, 10], remise: 0.10 },
+        complet: { nom: "Accompagnement complet (10 étapes)", steps: [1,2,3,4,5,6,7,8,9,10], remise: 0.20 },
+      },
+    };
+  }
+
+  function loadPricingConfig() {
+    try {
+      const raw = localStorage.getItem(PRICING_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.steps && parsed.packs) return parsed;
+      }
+    } catch (e) { /* ignore, fallback aux valeurs par défaut */ }
+    return defaultPricingConfig();
+  }
+
+  function savePricingConfig(cfg) {
+    try { localStorage.setItem(PRICING_STORAGE_KEY, JSON.stringify(cfg)); return true; }
+    catch (e) { return false; }
+  }
+
+  let pricingConfig = loadPricingConfig();
+
+  // =========================================================
+  // DIAGNOSTIC — réponses et devis enregistrés PAR PROSPECT
+  // Double sauvegarde :
+  //  1) localStorage (rapide, instantané, pour l'affichage immédiat)
+  //  2) champ "notes" du prospect, synchronisé vers Google Sheets via le
+  //     backend existant (aucune modification du schéma / de l'Apps Script
+  //     nécessaire) — pour que le diagnostic et le devis survivent à un
+  //     changement d'ordinateur/navigateur ou à un vidage de cache.
+  // Les données sont stockées dans "notes" entre des balises invisibles à
+  // l'utilisateur (retirées automatiquement de l'affichage).
+  // =========================================================
+  const DIAG_STORAGE_KEY = "gsc_diag_store_v1";
+  const DIAG_MARK_START = "<<<GSC_DIAG_DATA>>>";
+  const DIAG_MARK_END = "<<<FIN_GSC_DIAG_DATA>>>";
+
+  function loadDiagStore() {
+    try {
+      const raw = localStorage.getItem(DIAG_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") return parsed;
+      }
+    } catch (e) { /* ignore, on repart d'un store vide */ }
+    return {};
+  }
+
+  function saveDiagStore(store) {
+    try { localStorage.setItem(DIAG_STORAGE_KEY, JSON.stringify(store)); return true; }
+    catch (e) { return false; }
+  }
+
+  let diagStore = loadDiagStore(); // { [prospectId]: { answers, savedAt, devisSelection, devisPrices, devisRemisePct, devisSavedAt } }
+
+  // Sépare le texte de notes "lisible" (saisi par le consultant) des données
+  // de diagnostic cachées dans le même champ.
+  function extractDiagDataFromNotes(notes) {
+    if (!notes) return { visibleNotes: "", diagData: null };
+    const start = notes.indexOf(DIAG_MARK_START);
+    const end = notes.indexOf(DIAG_MARK_END);
+    if (start === -1 || end === -1 || end < start) return { visibleNotes: notes, diagData: null };
+    let diagData = null;
+    try { diagData = JSON.parse(notes.slice(start + DIAG_MARK_START.length, end)); } catch (e) { diagData = null; }
+    const visibleNotes = (notes.slice(0, start) + notes.slice(end + DIAG_MARK_END.length)).trim();
+    return { visibleNotes, diagData };
+  }
+
+  // Reconstruit le champ notes complet : texte lisible + bloc de données caché.
+  function embedDiagDataInNotes(visibleNotes, diagData) {
+    const block = DIAG_MARK_START + JSON.stringify(diagData) + DIAG_MARK_END;
+    const clean = (visibleNotes || "").trim();
+    return clean ? `${clean}\n\n${block}` : block;
+  }
+
+  // Ajoute une ligne de note lisible à un prospect SANS écraser ses données
+  // de diagnostic déjà enregistrées dans le même champ.
+  function appendNoteLine(prospect, line) {
+    const { visibleNotes, diagData } = extractDiagDataFromNotes(prospect.notes);
+    const newVisible = (visibleNotes ? visibleNotes + "\n" : "") + line;
+    prospect.notes = diagData ? embedDiagDataInNotes(newVisible, diagData) : newVisible;
+  }
+
+  // =========================================================
+  // AUTOMATISATION — création automatique du compte "Espace client"
+  // dans 03_Plateforme_Accompagnements.html quand un prospect passe au
+  // statut "Signé / Client" dans le pipeline.
+  //
+  // Solution fiable : passe par le backend GSC_Backend_Pont_Clients.gs
+  // (voir CLIENT_BRIDGE_WEBAPP_URL en haut de ce fichier), qui fonctionne
+  // quel que soit l'hébergement des deux plateformes (même domaine ou non).
+  // Si ce backend n'est pas encore configuré, on retente automatiquement
+  // via le localStorage du navigateur (ne fonctionne alors que si les deux
+  // fichiers sont servis depuis la même origine — solution de transition).
+  // =========================================================
+  let clientBridgeConfigured = CLIENT_BRIDGE_WEBAPP_URL.indexOf("REMPLACEZ") === -1;
+  let caBridgeConfigured = CA_BRIDGE_WEBAPP_URL.indexOf("REMPLACEZ") === -1;
+
+  async function apiPushClient(client) {
+    const res = await fetch(CLIENT_BRIDGE_WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" }, // évite le préflight CORS
+      body: JSON.stringify({ action: "upsert", client: client }),
+    });
+    if (!res.ok) throw new Error("Réponse HTTP " + res.status);
+    const data = await res.json();
+    if (data.status !== "ok") throw new Error(data.message || "Erreur backend inconnue");
+    return data;
+  }
+
+  // Mot de passe temporaire simple (6 chiffres) pour le nouveau compte client —
+  // à communiquer au client, qui pourra le changer une fois connecté.
+  function generateTempClientPassword() {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  // Repli local (fonctionne uniquement si 02 et 03 partagent la même origine) —
+  // conservé pour la période de transition, tant que le pont backend n'est
+  // pas encore déployé/configuré.
+  const ACCOMPAGNEMENT_STORAGE_KEY = "gsc_data"; // même clé que 03_Plateforme_Accompagnements.html
+  const ACCOMPAGNEMENT_DEFAULT_ADMIN_PASSWORD = "GSC-ADMIN";
+
+  function readAccompagnementStore() {
+    try {
+      const raw = localStorage.getItem(ACCOMPAGNEMENT_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          prospects: Array.isArray(parsed.prospects) ? parsed.prospects : [],
+          sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+          livrables: Array.isArray(parsed.livrables) ? parsed.livrables : [],
+          testimonials: Array.isArray(parsed.testimonials) ? parsed.testimonials : [],
+          consultants: Array.isArray(parsed.consultants) ? parsed.consultants : [],
+          adminPassword: parsed.adminPassword || ACCOMPAGNEMENT_DEFAULT_ADMIN_PASSWORD,
+        };
+      }
+    } catch (e) { console.error("Lecture Espace Accompagnement (repli local) impossible :", e); }
+    return { prospects: [], sessions: [], livrables: [], testimonials: [], consultants: [], adminPassword: ACCOMPAGNEMENT_DEFAULT_ADMIN_PASSWORD };
+  }
+
+  function writeAccompagnementStore(data) {
+    try { localStorage.setItem(ACCOMPAGNEMENT_STORAGE_KEY, JSON.stringify(data)); return true; }
+    catch (e) { console.error("Écriture Espace Accompagnement (repli local) impossible :", e); return false; }
+  }
+
+  function pushClientToAccompagnementLocal(prospect, clientRecord) {
+    const data = readAccompagnementStore();
+    const name = clientRecord.nom;
+
+    let existing = data.prospects.find(c => c.sourceProspectId === prospect.id);
+    if (!existing) {
+      existing = data.prospects.find(c => !c.sourceProspectId && c.nom && c.nom.toLowerCase() === name.toLowerCase());
+      if (existing) { existing.sourceProspectId = prospect.id; writeAccompagnementStore(data); }
+    }
+    if (existing) return { created: false, existing };
+
+    data.prospects.push(clientRecord);
+    const ok = writeAccompagnementStore(data);
+    return { created: ok, client: clientRecord };
+  }
+
+  // Crée (ou relie si déjà présent) le compte "Espace client" correspondant à ce
+  // prospect. Idempotent : rejouer cette fonction plusieurs fois pour le même
+  // prospect ne crée jamais de doublon (vérifié côté backend par sourceProspectId).
+  async function pushClientToAccompagnement(prospect) {
+    const clientRecord = {
+      id: "p" + Date.now(),
+      sourceProspectId: prospect.id, // lien vers le prospect d'origine (évite les doublons)
+      nom: displayName(prospect),
+      entreprise: prospect.entreprise || "",
+      secteur: prospect.secteur || "À définir",
+      telephone: prospect.telephone || "",
+      consultant: prospect.consultant || "",
+      password: generateTempClientPassword(),
+    };
+
+    if (clientBridgeConfigured) {
+      try {
+        const result = await apiPushClient(clientRecord);
+        return { created: !!result.created, client: result.client || result.existing };
+      } catch (e) {
+        console.error("Pont Clients (backend) indisponible, tentative via le repli local :", e);
+      }
+    }
+
+    return pushClientToAccompagnementLocal(prospect, clientRecord);
+  }
+
+  // =========================================================
+  // AUTOMATISATION — comptage automatique du chiffre d'affaires
+  // dans 04_Tableau_Bord_GSC.html quand un prospect passe au statut
+  // "Signé / Client". Le montant compté est le "Total à payer" du
+  // devis enregistré sur la fiche du prospect (onglet Diagnostic).
+  //
+  // Idempotent : l'entrée créée porte l'identifiant fixe "auto_"+id du
+  // prospect, donc rejouer cette fonction (ex. à chaque modification
+  // de la fiche) met à jour le montant existant au lieu d'empiler des
+  // doublons de chiffre d'affaires pour un même client.
+  // =========================================================
+  // =========================================================
+  // SAUVEGARDE & RÉESSAI AUTOMATIQUES DU PONT CA
+  // ---------------------------------------------------------
+  // Si l'envoi vers le backend CA échoue (réseau, backend pas encore
+  // autorisé, etc.), l'opération est gardée dans le navigateur et
+  // réessayée automatiquement — la vente n'est jamais perdue en silence.
+  // =========================================================
+  const CA_PENDING_KEY = "gsc_ca_bridge_pending_v1";
+  function loadCAPending() { try { return JSON.parse(localStorage.getItem(CA_PENDING_KEY) || "[]"); } catch (e) { return []; } }
+  function saveCAPendingList(list) { try { localStorage.setItem(CA_PENDING_KEY, JSON.stringify(list)); } catch (e) {} }
+  function queueCAOperation(op) {
+    op._qid = "q" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    const list = loadCAPending().filter(o =>
+      !(o.type === "upsert" && op.type === "upsert" && o.entry.id === op.entry.id) &&
+      !(o.type === "delete" && op.type === "delete" && o.id === op.id)
+    );
+    list.push(op);
+    saveCAPendingList(list);
+  }
+  let caFlushing = false;
+  async function flushCAPending() {
+    if (!caBridgeConfigured || caFlushing) return;
+    const list = loadCAPending();
+    if (!list.length) return;
+    caFlushing = true;
+    for (const op of list) {
+      try {
+        if (op.type === "upsert") await apiUpsertCA(op.entry);
+        else if (op.type === "delete") await apiDeleteCA(op.id);
+        saveCAPendingList(loadCAPending().filter(o => o._qid !== op._qid));
+      } catch (e) {
+        console.error("Synchronisation CA en attente — nouvel essai plus tard :", e.message);
+        break; // backend probablement indisponible : on retentera tout au prochain cycle
+      }
+    }
+    caFlushing = false;
+  }
+  setInterval(flushCAPending, 2 * 60 * 1000); // nouvel essai automatique toutes les 2 minutes
+
+  async function apiUpsertCA(entry) {
+    const res = await fetch(CA_BRIDGE_WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "upsert", entry: entry }),
+    });
+    if (!res.ok) throw new Error("Réponse HTTP " + res.status);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) { throw new Error("Réponse non-JSON du backend CA : " + text.slice(0, 120)); }
+    if (data.status !== "ok") throw new Error(data.message || "Erreur backend CA inconnue");
+  }
+
+  async function apiDeleteCA(id) {
+    const res = await fetch(CA_BRIDGE_WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "delete", id: id }),
+    });
+    if (!res.ok) throw new Error("Réponse HTTP " + res.status);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) { throw new Error("Réponse non-JSON du backend CA : " + text.slice(0, 120)); }
+    if (data.status !== "ok") throw new Error(data.message || "Erreur backend CA inconnue");
+  }
+
+  // Recalcule le "Total à payer" d'un devis à partir des données enregistrées
+  // pour un prospect (indépendamment de ce qui est actuellement affiché à
+  // l'écran) — mêmes règles que computeDevisTotals(), utilisées par l'onglet
+  // Diagnostic pendant l'édition.
+  function computeDevisTotalFromDiagEntry(entry) {
+    if (!entry || !entry.devisSelection) return 0;
+    const selection = entry.devisSelection || {};
+    const prices = entry.devisPrices || {};
+    let subtotal = 0;
+    DIAG_STEPS.forEach(step => {
+      if (selection[step.num]) subtotal += Number(prices[step.num]) || 0;
+    });
+    const remisePct = Number(entry.devisRemisePct) || 0;
+    return Math.round(subtotal - (subtotal * remisePct / 100));
+  }
+
+  // Crée, met à jour ou retire l'entrée de chiffre d'affaires liée à ce
+  // prospect selon son statut actuel. Appelée à chaque enregistrement de
+  // fiche (voir persistProspect). En cas d'échec (réseau, backend
+  // indisponible...), l'opération est mise en file d'attente locale et
+  // réessayée automatiquement — elle ne bloque et ne perd jamais rien.
+  async function syncCAForProspect(prospect) {
+    if (!caBridgeConfigured) return;
+    const caId = "auto_" + prospect.id;
+    if (prospect.statut === "Signé / Client") {
+      const diagEntry = getDiagEntry(prospect.id);
+      const total = computeDevisTotalFromDiagEntry(diagEntry);
+      if (total > 0) {
+        const entry = {
+          id: caId,
+          mois: new Date().toISOString().slice(0, 7),
+          montant: total,
+          source: "Auto — Devis GSC",
+          client: displayName(prospect) + (prospect.entreprise ? " — " + prospect.entreprise : ""),
+          prospectId: prospect.id,
+          note: "Devis " + devisNumero(prospect),
+        };
+        try { await apiUpsertCA(entry); }
+        catch (e) { console.error("CA différé (mis en attente) :", e.message); queueCAOperation({ type: "upsert", entry }); }
+      }
+    } else {
+      // Le prospect n'est plus (ou pas encore) "Signé / Client" : on retire
+      // une éventuelle entrée automatique existante (ex. statut corrigé
+      // par erreur). Sans effet si aucune entrée n'existait.
+      try { await apiDeleteCA(caId); }
+      catch (e) { console.error("Suppression CA différée (mise en attente) :", e.message); queueCAOperation({ type: "delete", id: caId }); }
+    }
+  }
+
+  // Fusionne `patch` dans l'entrée du prospect concerné, sauvegarde en local
+  // immédiatement, et programme une synchronisation vers Google Sheets.
+  function persistDiagEntry(prospectId, patch) {
+    if (!prospectId) return;
+    diagStore[prospectId] = { ...(diagStore[prospectId] || {}), ...patch };
+    saveDiagStore(diagStore);
+    scheduleDiagSync(prospectId);
+  }
+
+  function getDiagEntry(prospectId) {
+    return diagStore[prospectId] || null;
+  }
+
+  // Recharge dans l'état courant (diagAnswers, devisSelection...) tout ce qui a
+  // été précédemment enregistré pour ce prospect — ou repart de zéro si rien n'existe.
+  function loadDiagForProspect(prospectId) {
+    const entry = getDiagEntry(prospectId);
+    diagAnswers = entry && entry.answers ? { ...entry.answers } : {};
+    devisSelection = entry && entry.devisSelection ? { ...entry.devisSelection } : {};
+    devisPrices = entry && entry.devisPrices ? { ...entry.devisPrices } : {};
+    devisRemisePct = entry && typeof entry.devisRemisePct === "number" ? entry.devisRemisePct : 0;
+  }
+
+  // Après chargement des prospects depuis le backend, récupère toute donnée
+  // de diagnostic présente dans "notes" (saisie depuis un autre appareil) et
+  // la fusionne dans le cache local si elle est plus récente.
+  function hydrateDiagStoreFromProspects() {
+    let changed = false;
+    prospects.forEach(p => {
+      const { diagData } = extractDiagDataFromNotes(p.notes);
+      if (!diagData) return;
+      const local = diagStore[p.id];
+      const remoteTime = diagData.devisSavedAt || diagData.savedAt || "";
+      const localTime = local ? (local.devisSavedAt || local.savedAt || "") : "";
+      if (!local || remoteTime > localTime) { diagStore[p.id] = diagData; changed = true; }
+    });
+    if (changed) saveDiagStore(diagStore);
+  }
+
+  // Synchronisation différée vers le backend : on regroupe les modifications
+  // rapprochées (ex. plusieurs réponses cochées à la suite) en un seul envoi,
+  // pour éviter un appel réseau à chaque clic.
+  let diagSyncTimer = null;
+  function scheduleDiagSync(prospectId) {
+    if (diagSyncTimer) clearTimeout(diagSyncTimer);
+    diagSyncTimer = setTimeout(() => flushDiagSync(prospectId), 1200);
+  }
+
+  async function flushDiagSync(prospectId) {
+    if (diagSyncTimer) { clearTimeout(diagSyncTimer); diagSyncTimer = null; }
+    if (!prospectId) return;
+    const idx = prospects.findIndex(p => p.id === prospectId);
+    const entry = diagStore[prospectId];
+    if (idx === -1 || !entry) return;
+    const { visibleNotes } = extractDiagDataFromNotes(prospects[idx].notes);
+    prospects[idx].notes = embedDiagDataInNotes(visibleNotes, entry);
+    await persistProspect(prospects[idx]);
+  }
+
+  function fmtFCFA(n) {
+    const v = Math.round(Number(n) || 0);
+    return v.toLocaleString("fr-FR") + " FCFA";
+  }
+
+  // Formateur dédié au PDF : la police Helvetica de jsPDF ne supporte pas l'espace
+  // fine insécable utilisée par toLocaleString("fr-FR"), ce qui produit des séparateurs
+  // mal affichés (ex. des "/") dans la colonne Prix. On utilise donc un point "." ici.
+  function fmtFCFA_PDF(n) {
+    const v = Math.round(Number(n) || 0);
+    const withDots = Math.abs(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return (v < 0 ? "-" : "") + withDots + " FCFA";
+  }
+
+  // =========================================================
+  // STATE
+  // =========================================================
+  let prospects = [];
+  let activeTab = "dashboard";
+  let kanbanFilter = "";
+  let tableFilter = "";
+  let tableSearch = "";
+  let editingId = null;
+  let diagProspectId = null;
+  let diagAnswers = {}; // { "1-0": "Oui", ... }
+  let diagView = "questionnaire"; // "questionnaire" | "devis"
+  let devisSelection = {};   // { stepNum: true/false }
+  let devisPrices = {};      // { stepNum: prix (override ponctuel pour ce devis) }
+  let devisRemisePct = 0;    // remise globale appliquée (%)
+  let loaded = false;
+  let configMissing = WEBAPP_URL.indexOf("REMPLACEZ") !== -1;
+  let loadError = null;
+  let lastSync = null;
+  let syncing = false;
+  let msgStage = null;         // statut sélectionné dans l'onglet Messages
+  let msgVariantId = null;     // "relance" | "marketing"
+  let msgEditText = {};        // édition locale (session) des modèles, clé "statut|variant"
+
+  // =========================================================
+  // BACKEND (Google Apps Script + Google Sheets)
+  // =========================================================
+  async function apiGet() {
+    const res = await fetch(WEBAPP_URL, { method: "GET" });
+    if (!res.ok) throw new Error("Réponse HTTP " + res.status);
+    const data = await res.json();
+    if (data.status !== "ok") throw new Error(data.message || "Erreur backend inconnue");
+    return data.prospects || [];
+  }
+
+  async function apiUpsert(prospect) {
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" }, // évite le préflight CORS
+      body: JSON.stringify({ action: "upsert", prospect: prospect }),
+    });
+    if (!res.ok) throw new Error("Réponse HTTP " + res.status);
+    const data = await res.json();
+    if (data.status !== "ok") throw new Error(data.message || "Erreur backend inconnue");
+  }
+
+  async function apiDelete(id) {
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "delete", id: id }),
+    });
+    if (!res.ok) throw new Error("Réponse HTTP " + res.status);
+    const data = await res.json();
+    if (data.status !== "ok") throw new Error(data.message || "Erreur backend inconnue");
+  }
+
+  // =========================================================
+  // SAUVEGARDE LOCALE AUTOMATIQUE
+  // À chaque chargement, modification, suppression ou import, un instantané
+  // complet des prospects est conservé dans le navigateur (localStorage).
+  // Cela protège contre une perte de données lors d'une manipulation
+  // (import, modification en masse, erreur de synchronisation…) — le backend
+  // Google Sheets reste la source de vérité, ceci est un filet de secours local.
+  // =========================================================
+  const BACKUP_STORAGE_KEY = "gsc_prospects_backups_v1";
+  const BACKUP_MAX = 15;
+
+  function saveLocalBackup(reason) {
+    try {
+      const list = JSON.parse(localStorage.getItem(BACKUP_STORAGE_KEY) || "[]");
+      list.unshift({
+        timestamp: new Date().toISOString(),
+        reason: reason || "Sauvegarde",
+        count: prospects.length,
+        data: prospects,
+      });
+      while (list.length > BACKUP_MAX) list.pop();
+      localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {
+      // Le stockage local peut être plein ou désactivé (navigation privée) —
+      // ce n'est jamais bloquant, seulement une perte du filet de secours local.
+      console.warn("Sauvegarde locale impossible :", e);
+    }
+  }
+
+  function listLocalBackups() {
+    try { return JSON.parse(localStorage.getItem(BACKUP_STORAGE_KEY) || "[]"); }
+    catch (e) { return []; }
+  }
+
+  function formatBackupDate(iso) {
+    try {
+      return new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    } catch (e) { return iso; }
+  }
+
+  // =========================================================
+  // STORAGE HELPERS
+  // =========================================================
+  async function loadData(silent) {
+    if (configMissing) { loaded = true; render(); return; }
+    if (!silent) syncing = true;
+    try {
+      prospects = await apiGet();
+      hydrateDiagStoreFromProspects();
+      loadError = null;
+      lastSync = new Date();
+      saveLocalBackup("Chargement automatique");
+    } catch (e) {
+      loadError = e.message || String(e);
+      if (!silent) showToast("Erreur de connexion au backend");
+    }
+    syncing = false;
+    loaded = true;
+    render();
+  }
+
+  // Enregistre UN prospect modifié/créé (upsert) dans le backend
+  // silent=true : utilisé par l'import en masse pour éviter un toast par ligne.
+  async function persistProspect(prospect, silent) {
+    if (configMissing) { if (!silent) showToast("Configuration requise — voir l'écran d'accueil"); return false; }
+    if (!silent) { syncing = true; render(); }
+    try {
+      await apiUpsert(prospect);
+      lastSync = new Date();
+
+      // Déclencheur : dès qu'un prospect est enregistré au statut "Signé / Client",
+      // son compte "Espace client" est créé automatiquement (voir plus haut).
+      let accompagnementMsg = "";
+      if (prospect.statut === "Signé / Client") {
+        const result = await pushClientToAccompagnement(prospect);
+        if (result.created) {
+          appendNoteLine(prospect, `[Auto] Compte Espace client créé le ${new Date().toISOString().slice(0,10)} — mot de passe temporaire : ${result.client.password}`);
+          accompagnementMsg = ` + Espace client créé (mot de passe : ${result.client.password})`;
+          apiUpsert(prospect).catch(() => {}); // sauvegarde la note en tâche de fond, sans bloquer l'utilisateur
+        }
+      }
+
+      // Déclencheur : dès qu'un prospect est "Signé / Client", le "Total à
+      // payer" de son devis est compté automatiquement dans le Tableau de
+      // bord KPI (Chiffre d'affaires). Retiré automatiquement si le statut
+      // est corrigé par la suite. Ne bloque jamais l'enregistrement du
+      // prospect en cas d'échec réseau.
+      syncCAForProspect(prospect).catch(() => {});
+
+      if (!silent) { showToast("Enregistré automatiquement" + accompagnementMsg); syncing = false; saveLocalBackup("Modification d'une fiche"); }
+      return true;
+    } catch (e) {
+      if (!silent) { syncing = false; showToast("Échec de l'enregistrement — vérifiez votre connexion"); }
+      return false;
+    }
+  }
+
+  async function persistDelete(id) {
+    if (configMissing) { showToast("Configuration requise — voir l'écran d'accueil"); return false; }
+    syncing = true;
+    render();
+    try {
+      await apiDelete(id);
+      lastSync = new Date();
+      showToast("Supprimé et enregistré");
+      syncing = false;
+      saveLocalBackup("Suppression d'une fiche");
+      return true;
+    } catch (e) {
+      syncing = false;
+      showToast("Échec de la suppression — vérifiez votre connexion");
+      return false;
+    }
+  }
+
+  let toastTimer = null;
+  function showToast(msg) {
+    const el = document.getElementById("gsc-toast");
+    document.getElementById("gsc-toast-text").textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
+  }
+
+  // =========================================================
+  // IMPORT EXCEL / CSV — ajoute une liste existante de prospects
+  // (en plus du formulaire Google, qui reste la source automatique).
+  // =========================================================
+  const IMPORT_FIELDS = [
+    { key: "", label: "— Ignorer cette colonne —" },
+    { key: "nom", label: "Nom et prénom" },
+    { key: "entreprise", label: "Entreprise / Projet" },
+    { key: "email", label: "Email" },
+    { key: "telephone", label: "Téléphone" },
+    { key: "secteur", label: "Secteur d'activité" },
+    { key: "stade", label: "Stade du projet" },
+    { key: "description", label: "Description du projet" },
+    { key: "offreTestee", label: "Offre testée (Oui / Partiel / Non)" },
+    { key: "structuration", label: "Structuration (Oui / Partiel / Non)" },
+    { key: "acquisition", label: "Acquisition (Oui / Partiel / Non)" },
+    { key: "defiPrincipal", label: "Plus grand défi" },
+    { key: "disponibilite", label: "Disponibilité RDV" },
+    { key: "canalContact", label: "Canal de contact préféré" },
+    { key: "consultant", label: "Consultant assigné" },
+    { key: "statut", label: "Statut pipeline" },
+    { key: "canal", label: "Canal source (acquisition)" },
+    { key: "dateSubmission", label: "Date de soumission" },
+    { key: "notes", label: "Notes (remplace)" },
+    { key: "notes_append", label: "Ajouter aux Notes (complément)" },
+  ];
+
+  let importState = null; // { step, workbook, sheetNames, sheetName, headers, rows, mapping, result }
+
+  function resetImportState() {
+    importState = { step: 1, workbook: null, sheetNames: [], sheetName: "", headers: [], rows: [], mapping: {}, result: null, error: null, progress: null };
+  }
+
+  function normalizeHeader(h) {
+    return (h || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  }
+
+  function autoMapField(header) {
+    const h = normalizeHeader(header);
+    if (/nom.*prenom|prenom.*nom|^nom\b/.test(h)) return "nom";
+    if (/entreprise|projet|business|societe/.test(h)) return "entreprise";
+    if (/e[\s-]?mail/.test(h)) return "email";
+    if (/tel|phone|whatsapp|numero/.test(h)) return "telephone";
+    if (/secteur|type de business|activite/.test(h)) return "secteur";
+    if (/stade|deja lance|lancement/.test(h)) return "stade";
+    if (/decri|probleme|resout|description|idee de projet/.test(h)) return "description";
+    if (/deja essaye|deja teste|offre/.test(h)) return "offreTestee";
+    if (/blocage|defi|frein|obstacle/.test(h)) return "defiPrincipal";
+    if (/dispon/.test(h)) return "disponibilite";
+    if (/comment.*contact|canal.*contact|prefer.*contact/.test(h)) return "canalContact";
+    if (/consultant/.test(h)) return "consultant";
+    if (/^statut/.test(h)) return "statut";
+    if (/^canal|^source/.test(h)) return "canal";
+    if (/^date/.test(h)) return "dateSubmission";
+    if (/attend|objectif|note|remarque/.test(h)) return "notes_append";
+    return "";
+  }
+
+  function normalizePhone(t) { return (t || "").toString().replace(/\D/g, ""); }
+
+  function findDuplicateProspect(p) {
+    return prospects.find(x =>
+      (p.email && x.email && String(x.email).toLowerCase() === String(p.email).toLowerCase()) ||
+      (p.telephone && x.telephone && normalizePhone(p.telephone).length >= 6 && normalizePhone(x.telephone) === normalizePhone(p.telephone))
+    );
+  }
+
+  function buildProspectFromRow(row, mapping, index) {
+    const p = {
+      id: "p" + Date.now() + "_" + index,
+      dateSubmission: new Date().toISOString().slice(0, 10),
+      canal: "Import Excel",
+      nom: "", entreprise: "", email: "", telephone: "", secteur: "", stade: "",
+      description: "", offreTestee: "", structuration: "", acquisition: "",
+      defiPrincipal: "", disponibilite: "", canalContact: "", consultant: "",
+      statut: "Nouveau prospect", dateDerniereAction: "", dateProchaineAction: "",
+      prochaineAction: "", etapeGSC: "", notes: "",
+    };
+    const notesAppend = [];
+    Object.keys(mapping).forEach(header => {
+      const target = mapping[header];
+      if (!target) return;
+      const raw = row[header];
+      const val = (raw === undefined || raw === null) ? "" : String(raw).trim();
+      if (!val) return;
+      if (target === "notes_append") notesAppend.push(`${header} : ${val}`);
+      else if (target === "notes") p.notes = val;
+      else p[target] = val;
+    });
+    if (notesAppend.length) p.notes = (p.notes ? p.notes + "\n" : "") + notesAppend.join("\n");
+    return p;
+  }
+
+  function openImportModal() {
+    resetImportState();
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.id = "import-overlay";
+    document.body.appendChild(overlay);
+    renderImportModal();
+  }
+
+  function closeImportModal() {
+    const overlay = document.getElementById("import-overlay");
+    if (overlay) overlay.remove();
+    importState = null;
+    render();
+  }
+
+  function renderImportModal() {
+    const overlay = document.getElementById("import-overlay");
+    if (!overlay || !importState) return;
+    let bodyHtml = "";
+
+    if (importState.step === 1) {
+      bodyHtml = `
+        <div class="form-field full">
+          <label>Fichier Excel (.xlsx / .xls) ou CSV</label>
+          <input type="file" id="import-file-input" accept=".xlsx,.xls,.csv">
+          <div style="font-size:11.5px;color:var(--gray-500);margin-top:6px;">Le fichier reste sur votre appareil : seules les lignes que vous choisissez d'importer sont envoyées au backend.</div>
+        </div>
+        ${importState.error ? `<div style="color:var(--red);font-size:13px;margin-top:8px;">${esc(importState.error)}</div>` : ""}
+        ${importState.sheetNames.length > 1 ? `
+        <div class="form-field full" style="margin-top:10px;">
+          <label>Feuille à importer</label>
+          <select id="import-sheet-select">${importState.sheetNames.map(s => `<option value="${esc(s)}" ${s === importState.sheetName ? "selected" : ""}>${esc(s)}</option>`).join("")}</select>
+        </div>` : ""}
+        ${importState.headers.length ? `<div style="font-size:12.5px;color:var(--navy);margin-top:10px;">${importState.rows.length} ligne(s) détectée(s) sur la feuille « ${esc(importState.sheetName)} ».</div>` : ""}
+      `;
+    } else if (importState.step === 2) {
+      const rows = importState.headers.map(h => `
+        <tr>
+          <td style="padding:6px 8px;font-size:13px;">${esc(h)}</td>
+          <td style="padding:6px 8px;font-size:12px;color:var(--gray-500);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(importState.rows[0] ? String(importState.rows[0][h] ?? "") : "")}</td>
+          <td style="padding:6px 8px;">
+            <select data-map-header="${esc(h)}" style="width:100%;">
+              ${IMPORT_FIELDS.map(f => `<option value="${f.key}" ${importState.mapping[h] === f.key ? "selected" : ""}>${esc(f.label)}</option>`).join("")}
+            </select>
+          </td>
+        </tr>`).join("");
+      bodyHtml = `
+        <div style="font-size:12.5px;color:var(--gray-500);margin-bottom:10px;">Associez chaque colonne de votre fichier à un champ de la plateforme. Les colonnes laissées sur « Ignorer » ne seront pas importées.</div>
+        <div class="gsc-table-wrap">
+          <table class="gsc-table">
+            <thead><tr><th>Colonne du fichier</th><th>Exemple (ligne 1)</th><th>Associer à</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div style="font-size:12.5px;color:var(--navy);margin-top:10px;">${importState.rows.length} prospect(s) seront évalués. Les doublons (même email ou même téléphone qu'un prospect existant) seront automatiquement ignorés.</div>
+      `;
+    } else if (importState.step === 3) {
+      if (importState.progress) {
+        bodyHtml = `
+          <div style="text-align:center;padding:20px 0;">
+            <div style="font-size:14px;color:var(--navy);margin-bottom:10px;">Import en cours… ${importState.progress.done} / ${importState.progress.total}</div>
+            <div style="background:var(--gray-200);border-radius:8px;overflow:hidden;height:10px;">
+              <div style="background:var(--gold);height:100%;width:${Math.round((importState.progress.done / importState.progress.total) * 100)}%;"></div>
+            </div>
+          </div>`;
+      } else if (importState.result) {
+        const r = importState.result;
+        bodyHtml = `
+          <div style="padding:6px 0;">
+            <div style="font-size:14px;color:var(--navy);margin-bottom:8px;">Import terminé.</div>
+            <ul style="font-size:13px;line-height:1.9;color:var(--navy);">
+              <li>✅ ${r.ok} prospect(s) importé(s) et enregistré(s)</li>
+              <li>⏭ ${r.dup} doublon(s) ignoré(s) (email/téléphone déjà présent)</li>
+              <li>⚠ ${r.skipped} ligne(s) vide(s) ignorée(s)</li>
+              ${r.fail ? `<li style="color:var(--red);">❌ ${r.fail} échec(s) d'enregistrement (vérifiez la connexion et réessayez pour ces lignes)</li>` : ""}
+            </ul>
+          </div>`;
+      }
+    }
+
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>Importer des prospects (Excel / CSV)</h3>
+          <button class="modal-close" id="import-close">✕</button>
+        </div>
+        <div class="modal-body">${bodyHtml}</div>
+        <div class="modal-footer">
+          ${importState.step === 2 ? `<button class="btn btn-outline" id="import-back">← Retour</button>` : ""}
+          <button class="btn btn-outline" id="import-cancel">${importState.step === 3 && importState.result ? "Fermer" : "Annuler"}</button>
+          ${importState.step === 1 && importState.headers.length ? `<button class="btn btn-primary" id="import-next">Continuer →</button>` : ""}
+          ${importState.step === 2 ? `<button class="btn btn-primary" id="import-start">Importer ${importState.rows.length} prospect(s)</button>` : ""}
+        </div>
+      </div>
+    `;
+
+    document.getElementById("import-close").addEventListener("click", closeImportModal);
+    document.getElementById("import-cancel").addEventListener("click", closeImportModal);
+    overlay.addEventListener("click", e => { if (e.target === overlay) closeImportModal(); });
+
+    if (importState.step === 1) {
+      document.getElementById("import-file-input").addEventListener("change", handleImportFile);
+      const sheetSelect = document.getElementById("import-sheet-select");
+      if (sheetSelect) sheetSelect.addEventListener("change", e => loadImportSheet(e.target.value));
+      const nextBtn = document.getElementById("import-next");
+      if (nextBtn) nextBtn.addEventListener("click", () => {
+        importState.headers.forEach(h => { importState.mapping[h] = importState.mapping[h] ?? autoMapField(h); });
+        importState.step = 2;
+        renderImportModal();
+      });
+    } else if (importState.step === 2) {
+      document.getElementById("import-back").addEventListener("click", () => { importState.step = 1; renderImportModal(); });
+      document.querySelectorAll("[data-map-header]").forEach(sel => {
+        sel.addEventListener("change", e => { importState.mapping[e.target.dataset.mapHeader] = e.target.value; });
+      });
+      document.getElementById("import-start").addEventListener("click", startImport);
+    }
+  }
+
+  function handleImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    importState.error = null;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const wb = XLSX.read(data, { type: "array" });
+        importState.workbook = wb;
+        importState.sheetNames = wb.SheetNames;
+        // Choisit par défaut la feuille qui contient le plus de lignes remplies
+        // (utile quand le fichier contient plusieurs onglets, ex. modèle CRM).
+        let bestSheet = wb.SheetNames[0], bestCount = -1;
+        wb.SheetNames.forEach(name => {
+          const json = XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: "" });
+          if (json.length > bestCount) { bestCount = json.length; bestSheet = name; }
+        });
+        loadImportSheet(bestSheet);
+      } catch (err) {
+        importState.error = "Impossible de lire ce fichier : " + (err.message || err);
+        renderImportModal();
+      }
+    };
+    reader.onerror = () => { importState.error = "Erreur de lecture du fichier."; renderImportModal(); };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function loadImportSheet(sheetName) {
+    if (!importState.workbook) return;
+    const sheet = importState.workbook.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
+    importState.sheetName = sheetName;
+    importState.rows = json;
+    importState.headers = json.length ? Object.keys(json[0]) : [];
+    importState.mapping = {};
+    importState.headers.forEach(h => { importState.mapping[h] = autoMapField(h); });
+    renderImportModal();
+  }
+
+  async function startImport() {
+    const rows = importState.rows;
+    const mapping = importState.mapping;
+    const total = rows.length;
+    importState.step = 3;
+    importState.progress = { done: 0, total };
+    renderImportModal();
+
+    // Sauvegarde de l'état AVANT import — permet de revenir en arrière en cas de souci.
+    saveLocalBackup(`Avant import Excel/CSV (${total} ligne(s) à traiter)`);
+
+    let ok = 0, dup = 0, skipped = 0, fail = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const p = buildProspectFromRow(rows[i], mapping, i);
+      if (!p.nom && !p.entreprise && !p.email && !p.telephone) {
+        skipped++;
+      } else if (findDuplicateProspect(p)) {
+        dup++;
+      } else {
+        const success = await persistProspect(p, true);
+        if (success) { prospects.push(p); ok++; } else { fail++; }
+      }
+      importState.progress = { done: i + 1, total };
+      renderImportModal();
+    }
+
+    importState.progress = null;
+    importState.result = { ok, dup, skipped, fail, total };
+    renderImportModal();
+    if (ok > 0) { showToast(`${ok} prospect(s) importé(s)`); saveLocalBackup(`Après import Excel/CSV (${ok} ajouté(s))`); }
+    render(); // rafraîchit la liste des prospects derrière la modale
+  }
+
+  // =========================================================
+  // MODALE : SAUVEGARDES LOCALES
+  // =========================================================
+  function openBackupsModal() {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.id = "backups-overlay";
+    document.body.appendChild(overlay);
+    renderBackupsModal();
+  }
+
+  function closeBackupsModal() {
+    const overlay = document.getElementById("backups-overlay");
+    if (overlay) overlay.remove();
+  }
+
+  function renderBackupsModal() {
+    const overlay = document.getElementById("backups-overlay");
+    if (!overlay) return;
+    const backups = listLocalBackups();
+    const rows = backups.length === 0
+      ? `<tr><td colspan="4"><div class="empty-state">Aucune sauvegarde locale pour l'instant — elles se créent automatiquement à chaque chargement, modification, suppression ou import.</div></td></tr>`
+      : backups.map((b, i) => `
+        <tr>
+          <td>${esc(formatBackupDate(b.timestamp))}</td>
+          <td>${esc(b.reason)}</td>
+          <td>${b.count}</td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" data-dl-backup="${i}" title="Télécharger en .json">⬇</button>
+              <button class="btn btn-outline" data-restore-backup="${i}" style="font-size:12px;padding:5px 10px;">♻ Restaurer</button>
+            </div>
+          </td>
+        </tr>`).join("");
+
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>Sauvegardes locales</h3>
+          <button class="modal-close" id="backups-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="font-size:12.5px;color:var(--gray-500);margin-bottom:10px;">
+            Un instantané complet des prospects est enregistré automatiquement dans ce navigateur à chaque chargement, modification, suppression ou import — les ${BACKUP_MAX} plus récents sont conservés. Le backend Google Sheets reste la source de référence ; ceci est un filet de secours local en cas de fausse manœuvre.
+          </div>
+          <div style="margin-bottom:12px;">
+            <button class="btn btn-primary" id="backups-save-now" style="font-size:12.5px;">💾 Sauvegarder maintenant</button>
+          </div>
+          <div class="gsc-table-wrap">
+            <table class="gsc-table">
+              <thead><tr><th>Date</th><th>Déclencheur</th><th>Prospects</th><th>Actions</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="backups-cancel">Fermer</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("backups-close").addEventListener("click", closeBackupsModal);
+    document.getElementById("backups-cancel").addEventListener("click", closeBackupsModal);
+    overlay.addEventListener("click", e => { if (e.target === overlay) closeBackupsModal(); });
+
+    document.getElementById("backups-save-now").addEventListener("click", () => {
+      saveLocalBackup("Sauvegarde manuelle");
+      showToast("Sauvegarde enregistrée");
+      renderBackupsModal();
+    });
+
+    document.querySelectorAll("[data-dl-backup]").forEach(b => b.addEventListener("click", () => {
+      const backup = backups[Number(b.dataset.dlBackup)];
+      if (!backup) return;
+      const blob = new Blob([JSON.stringify(backup.data, null, 2)], { type: "application/json" });
+      const fileName = `GSC_Prospects_Sauvegarde_${backup.timestamp.slice(0, 19).replace(/[:T]/g, "-")}.json`;
+      downloadBlob(blob, fileName);
+      showToast("Sauvegarde téléchargée");
+    }));
+
+    document.querySelectorAll("[data-restore-backup]").forEach(b => b.addEventListener("click", async () => {
+      const backup = backups[Number(b.dataset.restoreBackup)];
+      if (!backup) return;
+      const confirmMsg = `Restaurer la sauvegarde du ${formatBackupDate(backup.timestamp)} (${backup.count} prospect(s)) ?\n\nCela réenregistre ces prospects tels qu'ils étaient à cette date sur le backend. Les prospects ajoutés depuis ne seront pas supprimés, mais ceux déjà présents seront écrasés par leur ancienne version.`;
+      if (!confirm(confirmMsg)) return;
+      closeBackupsModal();
+      showToast("Restauration en cours…");
+      let ok = 0, fail = 0;
+      for (const p of backup.data) {
+        const success = await persistProspect(p, true);
+        if (success) ok++; else fail++;
+      }
+      await loadData(true);
+      showToast(`Restauration terminée — ${ok} fiche(s) restaurée(s)${fail ? `, ${fail} échec(s)` : ""}`);
+    }));
+  }
+
+  // =========================================================
+  // COMPUTATIONS
+  // =========================================================
+  function scoreOf(p) {
+    const map = { "Oui": 2, "Partiel": 1, "Non": 0 };
+    const a = map[p.offreTestee] ?? "";
+    const b = map[p.structuration] ?? "";
+    const c = map[p.acquisition] ?? "";
+    if (a === "" && b === "" && c === "") return null;
+    return (a || 0) + (b || 0) + (c || 0);
+  }
+  function scoreColor(score) {
+    if (score === null || score === undefined) return "#B8B8C0";
+    if (score <= 2) return "#C0504D";
+    if (score <= 4) return "#E0A030";
+    return "#4C8A5E";
+  }
+  function priorityOf(p) {
+    if (p.disponibilite === "Cette semaine") return "Haute";
+    if (p.disponibilite === "La semaine prochaine" || p.disponibilite === "Dans les 2 prochaines semaines") return "Moyenne";
+    if (p.disponibilite) return "Basse";
+    return null;
+  }
+  function priorityColor(prio) {
+    if (prio === "Haute") return "#C0504D";
+    if (prio === "Moyenne") return "#E0A030";
+    if (prio === "Basse") return "#4C8A5E";
+    return "#B8B8C0";
+  }
+  function uid() { return "p_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8); }
+  function esc(s) {
+    return (s ?? "").toString().replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+  }
+  // Le formulaire ne collecte plus le nom et prénom (question supprimée) —
+  // on affiche le nom de l'entreprise/projet en repli, pour ne jamais avoir
+  // de ligne ou de carte vide.
+  function displayName(p) {
+    return p.nom || p.entreprise || "Prospect (nom à compléter)";
+  }
+
+  // =========================================================
+  // MESSAGES — relance & marketing (onglet "Messages")
+  // =========================================================
+
+  // Extrait un prénom probable pour la personnalisation ("Mme Khady Faye" -> "Khady").
+  function firstNameOf(p) {
+    let n = String(p.nom || p.entreprise || "").trim();
+    n = n.replace(/^(Mme|Mlle|M\.|Mr|Monsieur|Madame)\s+/i, "");
+    const parts = n.split(/\s+/).filter(Boolean);
+    return parts.length ? parts[0] : "là";
+  }
+
+  // Remplace les variables {{...}} d'un modèle par les données du prospect.
+  function personalizeMessage(template, p) {
+    return (template || "")
+      .replace(/{{\s*prenom\s*}}/g, firstNameOf(p))
+      .replace(/{{\s*entreprise\s*}}/g, p.entreprise || p.nom || "votre projet")
+      .replace(/{{\s*consultant\s*}}/g, p.consultant || "l'équipe GSC")
+      .replace(/{{\s*lien_calendly\s*}}/g, GSC_CALENDLY_URL)
+      .replace(/{{\s*whatsapp_gsc\s*}}/g, GSC_WHATSAPP_DISPLAY);
+  }
+
+  function copyTextToClipboard(text, successMsg) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => showToast(successMsg || "Copié dans le presse-papiers"))
+        .catch(() => showToast("Impossible de copier — copiez manuellement"));
+    } else {
+      showToast("Copie non supportée par ce navigateur — copiez manuellement");
+    }
+  }
+
+  // Ouvre WhatsApp avec le message personnalisé pré-rempli pour CE prospect,
+  // puis journalise l'action sur sa fiche (note + date dernière action).
+  async function sendMessageWhatsApp(prospectId, template, variantLabel) {
+    const p = prospects.find(x => x.id === prospectId);
+    if (!p) { showToast("Prospect introuvable"); return; }
+    const phone = normalizeWaPhone(p.telephone);
+    if (!phone) { showToast("Numéro WhatsApp invalide ou manquant pour ce prospect"); return; }
+    const text = personalizeMessage(template, p);
+    const url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(text);
+    const ok = openUrlInNewTab(url);
+    if (!ok) { showToast("Impossible d'ouvrir WhatsApp — copiez le message manuellement"); return; }
+
+    appendNoteLine(p, `[Relance WhatsApp] "${variantLabel}" envoyé le ${new Date().toISOString().slice(0, 10)}`);
+    p.dateDerniereAction = new Date().toISOString().slice(0, 10);
+    showToast("WhatsApp ouvert — message pré-rempli");
+    await persistProspect(p, true);
+    render();
+  }
+
+  // =========================================================
+  // RENDER: TABS
+  // =========================================================
+  const TABS = [
+    { id: "dashboard", label: "Tableau de bord" },
+    { id: "prospects", label: "Prospects (CRM)" },
+    { id: "kanban", label: "Pipeline" },
+    { id: "diagnostic", label: "Diagnostic" },
+    { id: "tarifs", label: "Tarifs" },
+    { id: "messages", label: "Messages" },
+  ];
+
+  function renderTabs() {
+    const el = document.getElementById("gsc-tabs");
+    el.innerHTML = TABS.map(t =>
+      `<div class="gsc-tab ${activeTab === t.id ? 'active' : ''}" data-tab="${t.id}">${t.label}</div>`
+    ).join("");
+    el.querySelectorAll(".gsc-tab").forEach(node => {
+      node.addEventListener("click", () => { if (diagProspectId) flushDiagSync(diagProspectId); activeTab = node.dataset.tab; render(); });
+    });
+  }
+
+  // =========================================================
+  // RENDER: DASHBOARD
+  // =========================================================
+  function renderDashboard() {
+    const total = prospects.length;
+    const byStatus = {};
+    STATUTS.forEach(s => byStatus[s.id] = 0);
+    prospects.forEach(p => { if (byStatus[p.statut] !== undefined) byStatus[p.statut]++; });
+
+    const signes = byStatus["Signé / Client"] || 0;
+    const tauxSignature = total ? Math.round((signes / total) * 1000) / 10 : 0;
+
+    const scores = prospects.map(scoreOf).filter(s => s !== null);
+    const scoreMoyen = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "—";
+
+    const prioCounts = { "Haute": 0, "Moyenne": 0, "Basse": 0 };
+    prospects.forEach(p => { const pr = priorityOf(p); if (pr) prioCounts[pr]++; });
+
+    let html = "";
+    html += `<div class="kpi-grid">
+      <div class="kpi-card accent-blue"><div class="kpi-label">Total prospects</div><div class="kpi-value">${total}</div></div>
+      <div class="kpi-card accent-green"><div class="kpi-label">Clients signés</div><div class="kpi-value">${signes}</div></div>
+      <div class="kpi-card accent-gold"><div class="kpi-label">Taux de signature</div><div class="kpi-value">${tauxSignature}%</div></div>
+      <div class="kpi-card accent-red"><div class="kpi-label">Score structuration moyen</div><div class="kpi-value">${scoreMoyen}${scores.length ? ' / 6' : ''}</div></div>
+    </div>`;
+
+    html += `<div class="section-title">Répartition par statut du pipeline</div>`;
+    const maxCount = Math.max(1, ...Object.values(byStatus));
+    STATUTS.forEach(s => {
+      const c = byStatus[s.id];
+      const w = Math.round((c / maxCount) * 100);
+      html += `<div class="bar-row">
+        <div class="bar-label">${esc(s.id)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${s.color}"></div></div>
+        <div class="bar-count">${c}</div>
+      </div>`;
+    });
+
+    html += `<div class="section-title">Répartition par priorité de contact</div>`;
+    const maxPrio = Math.max(1, ...Object.values(prioCounts));
+    [["Haute", "#C0504D"], ["Moyenne", "#E0A030"], ["Basse", "#4C8A5E"]].forEach(([k, color]) => {
+      const c = prioCounts[k];
+      const w = Math.round((c / maxPrio) * 100);
+      html += `<div class="bar-row">
+        <div class="bar-label">${k}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${color}"></div></div>
+        <div class="bar-count">${c}</div>
+      </div>`;
+    });
+
+    if (total === 0) {
+      html += `<div class="empty-state">Aucun prospect enregistré pour l'instant.<br>Ajoutez votre premier prospect dans l'onglet « Prospects (CRM) ».</div>`;
+    }
+
+    document.getElementById("gsc-body").innerHTML = `
+      <div class="shared-note">🔗 Ces données sont stockées dans votre feuille Google Sheets. Toute personne ouvrant ce fichier HTML (même en local) voit et modifie les mêmes prospects — actualisation automatique toutes les 30 secondes, ou via le bouton ⟳ en haut à droite.</div>
+      ${html}
+    `;
+  }
+
+  // =========================================================
+  // RENDER: PROSPECTS TABLE
+  // =========================================================
+  function renderProspects() {
+    let list = prospects.slice();
+    if (tableFilter) list = list.filter(p => p.statut === tableFilter);
+    if (tableSearch) {
+      const q = tableSearch.toLowerCase();
+      list = list.filter(p =>
+        String(p.nom || "").toLowerCase().includes(q) ||
+        String(p.entreprise || "").toLowerCase().includes(q) ||
+        String(p.email || "").toLowerCase().includes(q)
+      );
+    }
+    list.sort((a, b) => String(b.dateSubmission || "").localeCompare(String(a.dateSubmission || "")));
+
+    let rows = "";
+    if (list.length === 0) {
+      rows = `<tr><td colspan="11"><div class="empty-state">Aucun prospect ne correspond à ce filtre.</div></td></tr>`;
+    } else {
+      list.forEach(p => {
+        const score = scoreOf(p);
+        const prio = priorityOf(p);
+        rows += `<tr>
+          <td>${esc(p.dateSubmission || "—")}</td>
+          <td><strong>${esc(displayName(p))}</strong>${p.nom && p.entreprise ? `<br><span style="color:var(--gray-500)">${esc(p.entreprise)}</span>` : ""}</td>
+          <td>${esc(p.telephone || "—")}<br><span style="color:var(--gray-500)">${esc(p.email || "")}</span></td>
+          <td>${esc(p.secteur || "—")}</td>
+          <td>${esc(p.canal || "—")}</td>
+          <td>${score !== null ? `<span class="badge" style="background:${scoreColor(score)}">${score} / 6</span>` : "—"}</td>
+          <td>${prio ? `<span class="badge" style="background:${priorityColor(prio)}">${prio}</span>` : "—"}</td>
+          <td><span class="badge" style="background:${STATUT_COLORS[p.statut] || '#8A8A93'}">${esc(p.statut || "—")}</span></td>
+          <td>${esc(p.consultant || "—")}</td>
+          <td>${esc(p.etapeGSC || "—")}</td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" data-edit="${p.id}" title="Modifier">✎</button>
+              <button class="icon-btn" data-delete="${p.id}" title="Supprimer">🗑</button>
+            </div>
+          </td>
+        </tr>`;
+      });
+    }
+
+    const filterOptions = `<option value="">Tous les statuts</option>` +
+      STATUTS.map(s => `<option value="${esc(s.id)}" ${tableFilter === s.id ? "selected" : ""}>${esc(s.id)}</option>`).join("");
+
+    document.getElementById("gsc-body").innerHTML = `
+      <div class="toolbar">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <select class="filter-select" id="table-filter">${filterOptions}</select>
+          <input type="text" class="filter-select" id="table-search" placeholder="Rechercher (nom, entreprise, email)" value="${esc(tableSearch)}" style="min-width:220px;">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button class="btn btn-outline" id="btn-open-import">⬆ Importer Excel / CSV</button>
+          <button class="btn btn-outline" id="btn-open-backups">💾 Sauvegardes</button>
+        </div>
+      </div>
+      <div style="font-size:11.5px;color:var(--gray-500);font-style:italic;margin:-6px 0 10px;">Les nouveaux prospects arrivent automatiquement depuis le formulaire Google — cliquez sur ✎ pour compléter une fiche, ou sur « Importer » pour ajouter une liste existante.</div>
+      <div class="gsc-table-wrap">
+        <table class="gsc-table">
+          <thead><tr>
+            <th>Date</th><th>Nom / Entreprise</th><th>Contact</th><th>Secteur</th><th>Canal</th>
+            <th>Score</th><th>Priorité</th><th>Statut</th><th>Consultant</th><th>Étape GSC</th><th>Actions</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+
+    document.getElementById("table-filter").addEventListener("change", e => { tableFilter = e.target.value; render(); });
+    document.getElementById("table-search").addEventListener("input", e => { tableSearch = e.target.value; render(); });
+    document.getElementById("btn-open-import").addEventListener("click", openImportModal);
+    document.getElementById("btn-open-backups").addEventListener("click", openBackupsModal);
+    document.querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", () => openProspectModal(b.dataset.edit)));
+    document.querySelectorAll("[data-delete]").forEach(b => b.addEventListener("click", () => deleteProspect(b.dataset.delete)));
+  }
+
+  async function deleteProspect(id) {
+    if (!confirm("Supprimer définitivement ce prospect ?")) return;
+    const backup = prospects.slice();
+    prospects = prospects.filter(p => p.id !== id);
+    render();
+    const ok = await persistDelete(id);
+    if (!ok) { prospects = backup; } // annule localement si l'enregistrement a échoué
+    render();
+  }
+
+  // ---------- Modal: add/edit prospect ----------
+  function openProspectModal(id) {
+    if (!id) {
+      // Sécurité : la création manuelle est désactivée — seul le formulaire Google crée des prospects.
+      showToast("Création désactivée : les prospects arrivent via le formulaire Google");
+      return;
+    }
+    editingId = id;
+    const p = prospects.find(x => x.id === id);
+    if (!p) { showToast("Prospect introuvable"); return; }
+
+    const opts = (arr, val) => arr.map(o => `<option value="${esc(o)}" ${val === o ? "selected" : ""}>${esc(o)}</option>`).join("");
+    const canalContactValues = String(p.canalContact || "").split(",").map(s => s.trim()).filter(Boolean);
+    const checkboxGroup = (name, arr, selectedValues) => arr.map(o => `
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--navy);margin-bottom:4px;">
+        <input type="checkbox" name="${name}" value="${esc(o)}" ${selectedValues.includes(o) ? "checked" : ""}> ${esc(o)}
+      </label>`).join("");
+
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.id = "modal-overlay";
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>Modifier le prospect</h3>
+          <button class="modal-close" id="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+
+            <div class="form-field full" style="border-bottom:2px solid var(--gold-light);padding-bottom:2px;margin-bottom:2px;"><label style="font-size:12.5px;color:var(--navy);">Coordonnées</label></div>
+            <div class="form-field"><label>Email</label><input type="email" id="f-email" value="${esc(p.email)}"></div>
+            <div class="form-field"><label>Numéro de téléphone (WhatsApp de préférence)</label><input type="text" id="f-telephone" value="${esc(p.telephone)}"></div>
+
+            <div class="form-field full" style="border-bottom:2px solid var(--gold-light);padding-bottom:2px;margin-bottom:2px;"><label style="font-size:12.5px;color:var(--navy);">Votre projet</label></div>
+            <div class="form-field"><label>Nom de votre entreprise ou de votre projet</label><input type="text" id="f-entreprise" value="${esc(p.entreprise)}"></div>
+            <div class="form-field"><label>Secteur d'activité</label><select id="f-secteur"><option value="">—</option>${opts(SECTEURS, p.secteur)}</select></div>
+
+            <div class="form-field full" style="border-bottom:2px solid var(--gold-light);padding-bottom:2px;margin-bottom:2px;"><label style="font-size:12.5px;color:var(--navy);">Où en êtes-vous ?</label></div>
+            <div class="form-field full"><label>À quel stade se trouve votre projet aujourd'hui ?</label><select id="f-stade"><option value="">—</option>${opts(STADES, p.stade)}</select></div>
+
+            <div class="form-field full" style="border-bottom:2px solid var(--gold-light);padding-bottom:2px;margin-bottom:2px;"><label style="font-size:12.5px;color:var(--navy);">Clarté de votre projet</label></div>
+            <div class="form-field full"><label>En une phrase, comment décririez-vous votre projet et le problème qu'il résout ?</label><textarea id="f-description">${esc(p.description)}</textarea></div>
+            <div class="form-field full"><label>Avez-vous déjà testé votre offre auprès de vrais clients potentiels ?</label><select id="f-offre"><option value="">—</option>${opts(OUI_PARTIEL_NON, p.offreTestee)}</select></div>
+
+            <div class="form-field full" style="border-bottom:2px solid var(--gold-light);padding-bottom:2px;margin-bottom:2px;"><label style="font-size:12.5px;color:var(--navy);">Structuration de votre business</label></div>
+            <div class="form-field full"><label>Avez-vous une grille de prix fixe et des processus écrits (production, livraison, facturation) ?</label><select id="f-structuration"><option value="">—</option>${opts(OUI_PARTIEL_NON, p.structuration)}</select></div>
+
+            <div class="form-field full" style="border-bottom:2px solid var(--gold-light);padding-bottom:2px;margin-bottom:2px;"><label style="font-size:12.5px;color:var(--navy);">Acquisition et vente</label></div>
+            <div class="form-field full"><label>Générez-vous un flux régulier de nouveaux clients/prospects chaque mois ?</label><select id="f-acquisition"><option value="">—</option>${opts(OUI_PARTIEL_NON, p.acquisition)}</select></div>
+            <div class="form-field full"><div class="score-preview"><span>Score de structuration calculé automatiquement</span><strong id="f-score-preview">—</strong></div></div>
+
+            <div class="form-field full" style="border-bottom:2px solid var(--gold-light);padding-bottom:2px;margin-bottom:2px;"><label style="font-size:12.5px;color:var(--navy);">Votre plus grand défi</label></div>
+            <div class="form-field full"><label>Quel est votre plus grand défi actuellement ? (plusieurs réponses possibles)</label><input type="text" id="f-defi" value="${esc(p.defiPrincipal)}" placeholder="Ex : Trouver des clients / me faire connaître, Structurer mon business"></div>
+
+            <div class="form-field full" style="border-bottom:2px solid var(--gold-light);padding-bottom:2px;margin-bottom:2px;"><label style="font-size:12.5px;color:var(--navy);">Votre rendez-vous diagnostic</label></div>
+            <div class="form-field"><label>Quand seriez-vous disponible pour un rendez-vous diagnostic gratuit (30-45 min) avec un consultant GSC ?</label><select id="f-dispo"><option value="">—</option>${opts(DISPOS, p.disponibilite)}</select></div>
+            <div class="form-field">
+              <label>Préférez-vous être contacté par</label>
+              <div id="f-canalcontact-group" style="border:1px solid var(--gray-300);border-radius:6px;padding:8px 10px;">${checkboxGroup("canalcontact", CANAL_CONTACT, canalContactValues)}</div>
+            </div>
+
+            <div class="form-field full" style="border-bottom:2px solid var(--gold-light);padding-bottom:2px;margin-bottom:2px;margin-top:6px;"><label style="font-size:12.5px;color:var(--navy);">Informations complémentaires (non collectées par le formulaire)</label></div>
+            <div class="form-field"><label>Nom et prénom <span style="text-transform:none;font-weight:400;color:var(--gray-500);">(à demander au 1er contact)</span></label><input type="text" id="f-nom" value="${esc(p.nom)}" placeholder="Complété après le premier échange"></div>
+            <div class="form-field"><label>Canal source</label><select id="f-canal"><option value="">—</option>${opts(CANAUX, p.canal)}</select></div>
+            <div class="form-field"><label>Date de soumission</label><input type="date" id="f-date" value="${esc(p.dateSubmission)}"></div>
+            <div class="form-field"><label>Consultant assigné</label><input type="text" id="f-consultant" value="${esc(p.consultant)}"></div>
+            <div class="form-field"><label>Statut pipeline</label><select id="f-statut">${opts(STATUTS.map(s => s.id), p.statut)}</select>
+              <div style="font-size:11px;color:var(--gray-500);margin-top:4px;">🔗 « Signé / Client » crée automatiquement son compte sur l'Espace client (plateforme d'accompagnement).</div>
+            </div>
+            <div class="form-field"><label>Date dernière action</label><input type="date" id="f-datederniere" value="${esc(p.dateDerniereAction)}"></div>
+            <div class="form-field"><label>Date prochaine action</label><input type="date" id="f-dateprochaine" value="${esc(p.dateProchaineAction)}"></div>
+            <div class="form-field full"><label>Prochaine action</label><input type="text" id="f-prochaineaction" value="${esc(p.prochaineAction)}"></div>
+            <div class="form-field full"><label>Étape GSC identifiée (diagnostic)</label><input type="text" id="f-etapegsc" value="${esc(p.etapeGSC)}" placeholder="Se remplit automatiquement via l'onglet Diagnostic"></div>
+            <div class="form-field full"><label>Notes / Historique des échanges</label><textarea id="f-notes" style="min-height:80px;">${esc(extractDiagDataFromNotes(p.notes).visibleNotes)}</textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="modal-cancel">Annuler</button>
+          <button class="btn btn-primary" id="modal-save">Enregistrer</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    function updateScorePreview() {
+      const map = { "Oui": 2, "Partiel": 1, "Non": 0, "": null };
+      const a = map[document.getElementById("f-offre").value];
+      const b = map[document.getElementById("f-structuration").value];
+      const c = map[document.getElementById("f-acquisition").value];
+      if (a === null && b === null && c === null) {
+        document.getElementById("f-score-preview").textContent = "—";
+      } else {
+        const s = (a || 0) + (b || 0) + (c || 0);
+        document.getElementById("f-score-preview").textContent = s + " / 6";
+      }
+    }
+    ["f-offre", "f-structuration", "f-acquisition"].forEach(id =>
+      document.getElementById(id).addEventListener("change", updateScorePreview)
+    );
+    updateScorePreview();
+
+    function closeModal() { overlay.remove(); }
+    document.getElementById("modal-close").addEventListener("click", closeModal);
+    document.getElementById("modal-cancel").addEventListener("click", closeModal);
+    overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
+
+    document.getElementById("modal-save").addEventListener("click", async () => {
+      const updated = {
+        id: p.id,
+        dateSubmission: document.getElementById("f-date").value,
+        canal: document.getElementById("f-canal").value,
+        nom: document.getElementById("f-nom").value.trim(),
+        entreprise: document.getElementById("f-entreprise").value.trim(),
+        email: document.getElementById("f-email").value.trim(),
+        telephone: document.getElementById("f-telephone").value.trim(),
+        secteur: document.getElementById("f-secteur").value,
+        stade: document.getElementById("f-stade").value,
+        description: document.getElementById("f-description").value.trim(),
+        offreTestee: document.getElementById("f-offre").value,
+        structuration: document.getElementById("f-structuration").value,
+        acquisition: document.getElementById("f-acquisition").value,
+        defiPrincipal: document.getElementById("f-defi").value.trim(),
+        disponibilite: document.getElementById("f-dispo").value,
+        canalContact: Array.from(document.querySelectorAll('input[name="canalcontact"]:checked')).map(el => el.value).join(", "),
+        consultant: document.getElementById("f-consultant").value.trim(),
+        statut: document.getElementById("f-statut").value,
+        dateDerniereAction: document.getElementById("f-datederniere").value,
+        dateProchaineAction: document.getElementById("f-dateprochaine").value,
+        prochaineAction: document.getElementById("f-prochaineaction").value.trim(),
+        etapeGSC: document.getElementById("f-etapegsc").value.trim(),
+        notes: document.getElementById("f-notes").value.trim(),
+      };
+      // Préserve le diagnostic/devis éventuellement enregistré pour ce prospect
+      // (stocké caché dans "notes") : on ne le remplace pas par le texte du formulaire.
+      if (id) {
+        const existing = prospects.find(x => x.id === id);
+        const { diagData } = extractDiagDataFromNotes(existing ? existing.notes : "");
+        if (diagData) updated.notes = embedDiagDataInNotes(updated.notes, diagData);
+      }
+      if (!updated.nom && !updated.entreprise) { alert("Renseignez au moins le nom ou le nom de l'entreprise/projet."); return; }
+
+      if (id) {
+        const idx = prospects.findIndex(x => x.id === id);
+        prospects[idx] = updated;
+      } else {
+        prospects.push(updated);
+      }
+      closeModal();
+      render();
+      await persistProspect(updated);
+      render();
+    });
+  }
+
+  // =========================================================
+  // RENDER: KANBAN
+  // =========================================================
+  function renderKanban() {
+    let html = `<div class="toolbar">
+      <div style="font-size:12.5px;color:var(--gray-500);">Cliquez sur ◀ ▶ pour faire avancer ou reculer un prospect dans le pipeline. Cliquez sur une carte pour la modifier. 🔗 Passage automatique au statut « Signé / Client » = création automatique de son compte Espace client sur la plateforme d'accompagnement.</div>
+    </div>`;
+    html += `<div class="kanban-board">`;
+    STATUTS.forEach((s, idx) => {
+      const items = prospects.filter(p => p.statut === s.id);
+      html += `<div class="kanban-col">
+        <div class="kanban-col-header" style="background:${s.color}"><span>${esc(s.id)}</span><span>${items.length}</span></div>
+        <div class="kanban-col-body">`;
+      if (items.length === 0) {
+        html += `<div class="kanban-empty">Aucun prospect</div>`;
+      } else {
+        items.forEach(p => {
+          const score = scoreOf(p);
+          html += `<div class="kanban-card" data-edit="${p.id}">
+            <div class="kc-name">${esc(displayName(p))}</div>
+            <div class="kc-meta">${esc(p.nom ? (p.entreprise || "") : "")}</div>
+            ${score !== null ? `<span class="kc-score" style="background:${scoreColor(score)}">Score ${score}/6</span>` : ""}
+            <div class="kanban-card-actions">
+              ${idx > 0 ? `<button class="icon-btn" data-move="${p.id}" data-dir="-1" title="Reculer">◀</button>` : `<span style="width:26px;display:inline-block;"></span>`}
+              ${idx < STATUTS.length - 1 ? `<button class="icon-btn" data-move="${p.id}" data-dir="1" title="Avancer">▶</button>` : ""}
+            </div>
+          </div>`;
+        });
+      }
+      html += `</div></div>`;
+    });
+    html += `</div>`;
+
+    document.getElementById("gsc-body").innerHTML = html;
+
+    document.querySelectorAll(".kanban-card").forEach(card => {
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("[data-move]")) return;
+        openProspectModal(card.dataset.edit);
+      });
+    });
+    document.querySelectorAll("[data-move]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.move;
+        const dir = parseInt(btn.dataset.dir, 10);
+        const p = prospects.find(x => x.id === id);
+        const curIdx = STATUTS.findIndex(s => s.id === p.statut);
+        const newIdx = curIdx + dir;
+        if (newIdx < 0 || newIdx >= STATUTS.length) return;
+        p.statut = STATUTS[newIdx].id;
+        p.dateDerniereAction = new Date().toISOString().slice(0, 10);
+        render();
+        await persistProspect(p);
+        render();
+      });
+    });
+  }
+
+  // =========================================================
+  // RENDER: DIAGNOSTIC
+  // =========================================================
+  function renderDiagnostic() {
+    const options = prospects.map(p => {
+      const saved = !!getDiagEntry(p.id);
+      return `<option value="${p.id}" ${diagProspectId === p.id ? "selected" : ""}>${saved ? "💾 " : ""}${esc(displayName(p))}${p.nom && p.entreprise ? " — " + esc(p.entreprise) : ""}</option>`;
+    }).join("");
+
+    let html = `<div class="diag-select-bar">
+      <div class="form-field" style="min-width:280px;">
+        <label>Sélectionner un prospect</label>
+        <select id="diag-select"><option value="">— Choisir un prospect —</option>${options}</select>
+      </div>
+    </div>`;
+
+    if (!diagProspectId) {
+      html += `<div class="empty-state">Sélectionnez un prospect ci-dessus pour lancer son diagnostic complet (30 questions, 10 étapes de la méthode GSC). Les prospects marqués 💾 ont déjà un diagnostic enregistré.</div>`;
+      document.getElementById("gsc-body").innerHTML = html;
+      document.getElementById("diag-select").addEventListener("change", e => { if (diagProspectId) flushDiagSync(diagProspectId); diagProspectId = e.target.value; loadDiagForProspect(diagProspectId); diagView = "questionnaire"; render(); });
+      return;
+    }
+
+    const prospect = prospects.find(p => p.id === diagProspectId);
+
+    if (diagView === "devis") { renderDevisBuilder(prospect); return; }
+
+    const savedEntry = getDiagEntry(diagProspectId);
+    if (savedEntry && savedEntry.savedAt) {
+      const savedDate = new Date(savedEntry.savedAt).toLocaleString("fr-FR");
+      html += `<div class="shared-note" style="margin-bottom:14px;">💾 Diagnostic enregistré le ${esc(savedDate)} pour ce prospect (synchronisé sur votre fiche Google Sheets) — les réponses ont été rechargées automatiquement, vous pouvez les consulter ou les modifier.
+        ${savedEntry.devisSavedAt ? `<button class="btn btn-outline btn-sm" id="btn-resume-devis" style="margin-left:8px;">Revoir / renvoyer le devis →</button>` : ""}
+      </div>`;
+    }
+
+    DIAG_STEPS.forEach(step => {
+      html += `<div class="diag-step">
+        <div class="diag-step-header">
+          <span>Étape ${step.num} — ${esc(step.name)}</span>
+          <span class="badge" style="background:${PRIO_COLOR[step.priorite]}">${step.priorite}</span>
+        </div>`;
+      step.questions.forEach((q, qi) => {
+        const key = `${step.num}-${qi}`;
+        const current = diagAnswers[key] || "";
+        html += `<div class="diag-q">
+          <div class="diag-q-text">${esc(q)}</div>
+          <div class="diag-options">
+            ${OUI_PARTIEL_NON.map(o => `
+              <label><input type="radio" name="q-${key}" value="${o}" data-key="${key}" ${current === o ? "checked" : ""}> ${o}</label>
+            `).join("")}
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+
+    // compute result if all answered
+    const totalQ = DIAG_STEPS.reduce((a, s) => a + s.questions.length, 0);
+    const answeredCount = Object.keys(diagAnswers).length;
+    html += `<div style="margin:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-compute-diag">Calculer le diagnostic (${answeredCount} / ${totalQ} réponses)</button>
+      <button class="btn btn-outline" id="btn-reset-diag">Réinitialiser</button>
+      <span id="diag-save-indicator" style="font-size:12px;color:var(--gray-500);">${answeredCount > 0 ? "💾 Sauvegarde automatique activée — synchronisée sur la fiche Google Sheets du prospect" : ""}</span>
+    </div>`;
+    html += `<div id="diag-result-area"></div>`;
+
+    document.getElementById("gsc-body").innerHTML = html;
+
+    document.getElementById("diag-select").addEventListener("change", e => { if (diagProspectId) flushDiagSync(diagProspectId); diagProspectId = e.target.value; loadDiagForProspect(diagProspectId); diagView = "questionnaire"; render(); });
+    if (document.getElementById("btn-resume-devis")) {
+      document.getElementById("btn-resume-devis").addEventListener("click", () => { diagView = "devis"; render(); });
+    }
+    document.querySelectorAll("[data-key]").forEach(radio => {
+      radio.addEventListener("change", () => {
+        diagAnswers[radio.dataset.key] = radio.value;
+        persistDiagEntry(prospect.id, { answers: { ...diagAnswers }, savedAt: new Date().toISOString() });
+        const totalQ2 = DIAG_STEPS.reduce((a, s) => a + s.questions.length, 0);
+        const btn = document.getElementById("btn-compute-diag");
+        if (btn) btn.textContent = `Calculer le diagnostic (${Object.keys(diagAnswers).length} / ${totalQ2} réponses)`;
+        const ind = document.getElementById("diag-save-indicator");
+        if (ind) ind.textContent = "💾 Enregistré à " + new Date().toLocaleTimeString("fr-FR");
+      });
+    });
+    document.getElementById("btn-reset-diag").addEventListener("click", () => {
+      if (!confirm("Réinitialiser effacera aussi le diagnostic et le devis enregistrés pour ce prospect. Continuer ?")) return;
+      diagAnswers = {}; devisSelection = {}; devisPrices = {}; devisRemisePct = 0;
+      delete diagStore[prospect.id];
+      saveDiagStore(diagStore);
+      diagView = "questionnaire";
+      render();
+    });
+    document.getElementById("btn-compute-diag").addEventListener("click", () => computeDiagnostic(prospect));
+  }
+
+  // Calcule les résultats du diagnostic à partir des réponses actuelles (diagAnswers).
+  // Partagé entre l'écran de résultat du diagnostic et le générateur de devis.
+  function getStepResults() {
+    const map = { "Oui": 2, "Partiel": 1, "Non": 0 };
+    let firstGap = null;
+    const stepResults = DIAG_STEPS.map(step => {
+      let score = 0;
+      let answered = 0;
+      step.questions.forEach((q, qi) => {
+        const key = `${step.num}-${qi}`;
+        if (diagAnswers[key]) { score += map[diagAnswers[key]]; answered++; }
+      });
+      const complete = answered === step.questions.length;
+      const statut = !complete ? "Incomplet" : score >= 5 ? "Acquis" : score >= 3 ? "Partiel" : "Manquant";
+      if (firstGap === null && complete && statut !== "Acquis") firstGap = step;
+      return { step, score, statut };
+    });
+    const incomplete = stepResults.some(r => r.statut === "Incomplet");
+    return { stepResults, incomplete, firstGap };
+  }
+
+  async function computeDiagnostic(prospect) {
+    const { stepResults, incomplete, firstGap } = getStepResults();
+
+    let resultHtml = "";
+    if (incomplete) {
+      resultHtml = `<div class="diag-result-box"><div class="dr-line">⚠ Répondez à toutes les questions pour obtenir la synthèse complète. Un résultat partiel reste consultable ci-dessous.</div></div>`;
+    }
+
+    resultHtml += `<div class="diag-result-box">
+      <div class="dr-line"><span class="dr-label">Étape réelle identifiée : </span>${firstGap ? `Étape ${firstGap.num} — ${esc(firstGap.name)}` : (incomplete ? "— (à déterminer une fois toutes les réponses saisies)" : "Toutes les étapes sont acquises — entreprise mature")}</div>
+      ${firstGap ? `<div class="dr-line"><span class="dr-label">Priorité de la faille : </span><span class="badge" style="background:${PRIO_COLOR[firstGap.priorite]}">${firstGap.priorite}</span></div>` : ""}
+      ${firstGap ? `<div class="dr-line"><span class="dr-label">Proposition GSC : </span>${esc(firstGap.proposition)}</div>` : ""}
+      <div class="dr-line"><span class="dr-label">Score global : </span>${stepResults.reduce((a, r) => a + r.score, 0)} / 60</div>
+    </div>`;
+
+    resultHtml += `<div class="section-title">Détail par étape</div>`;
+    stepResults.forEach(r => {
+      const color = r.statut === "Acquis" ? "#4C8A5E" : r.statut === "Partiel" ? "#E0A030" : r.statut === "Manquant" ? "#C0504D" : "#B8B8C0";
+      resultHtml += `<div class="bar-row">
+        <div class="bar-label">Étape ${r.step.num} — ${esc(r.step.name)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round((r.score/6)*100)}%;background:${color}"></div></div>
+        <div class="bar-count">${r.score}/6</div>
+      </div>`;
+    });
+
+    if (!incomplete) {
+      resultHtml += `<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-gold" id="btn-save-diag">Enregistrer ce résultat sur la fiche du prospect</button>
+        <button class="btn btn-primary" id="btn-goto-devis">Générer le devis →</button>
+      </div>`;
+    }
+
+    document.getElementById("diag-result-area").innerHTML = resultHtml;
+
+    if (!incomplete) {
+      document.getElementById("btn-save-diag").addEventListener("click", async () => {
+        await flushDiagSync(prospect.id); // s'assure que les réponses courantes sont bien dans prospects[idx].notes avant d'y ajouter la ligne
+        const idx = prospects.findIndex(p => p.id === prospect.id);
+        if (idx === -1) return;
+        const label = firstGap ? `Étape ${firstGap.num} — ${firstGap.name}` : "Toutes étapes acquises";
+        prospects[idx].etapeGSC = label;
+        const note = `[Diagnostic ${new Date().toISOString().slice(0,10)}] ${label}` +
+          (firstGap ? ` (priorité ${firstGap.priorite}) — Proposition : ${firstGap.proposition}` : "");
+        appendNoteLine(prospects[idx], note);
+        prospects[idx].statut = "RDV réalisé (diagnostic fait)";
+        prospects[idx].dateDerniereAction = new Date().toISOString().slice(0, 10);
+        render();
+        await persistProspect(prospects[idx]);
+        render();
+      });
+      document.getElementById("btn-goto-devis").addEventListener("click", () => {
+        openDevisBuilder(stepResults, prospect.id);
+      });
+    }
+  }
+
+  // =========================================================
+  // DEVIS (à partir du résultat du diagnostic)
+  // =========================================================
+
+  // Initialise la sélection du devis à partir du résultat du diagnostic :
+  // les étapes "Manquant" ou "Partiel" sont pré-cochées, "Acquis" décochées.
+  function openDevisBuilder(stepResults, prospectId) {
+    devisSelection = {};
+    devisPrices = {};
+    stepResults.forEach(r => {
+      devisSelection[r.step.num] = (r.statut === "Manquant" || r.statut === "Partiel");
+      devisPrices[r.step.num] = pricingConfig.steps[r.step.num] ? pricingConfig.steps[r.step.num].prix : 0;
+    });
+    devisRemisePct = detectPackDiscount(devisSelection);
+    persistDiagEntry(prospectId, {
+      devisSelection: { ...devisSelection },
+      devisPrices: { ...devisPrices },
+      devisRemisePct,
+      devisSavedAt: new Date().toISOString(),
+    });
+    diagView = "devis";
+    render();
+  }
+
+  // Si les étapes cochées correspondent exactement aux étapes d'un pack, on
+  // pré-remplit la remise avec celle du pack. Sinon, remise à 0 par défaut.
+  function detectPackDiscount(selection) {
+    const selectedNums = Object.keys(selection).filter(k => selection[k]).map(Number).sort((a, b) => a - b);
+    if (selectedNums.length === 0) return 0;
+    const match = Object.values(pricingConfig.packs).find(pack => {
+      const packNums = pack.steps.slice().sort((a, b) => a - b);
+      return packNums.length === selectedNums.length && packNums.every((n, i) => n === selectedNums[i]);
+    });
+    return match ? Math.round(match.remise * 1000) / 10 : 0;
+  }
+
+  function matchingPack(selection) {
+    const selectedNums = Object.keys(selection).filter(k => selection[k]).map(Number).sort((a, b) => a - b);
+    if (selectedNums.length === 0) return null;
+    return Object.values(pricingConfig.packs).find(pack => {
+      const packNums = pack.steps.slice().sort((a, b) => a - b);
+      return packNums.length === selectedNums.length && packNums.every((n, i) => n === selectedNums[i]);
+    }) || null;
+  }
+
+  function computeDevisTotals() {
+    let subtotal = 0;
+    DIAG_STEPS.forEach(step => {
+      if (devisSelection[step.num]) subtotal += Number(devisPrices[step.num]) || 0;
+    });
+    const remiseMontant = subtotal * (Number(devisRemisePct) || 0) / 100;
+    const total = subtotal - remiseMontant;
+    return { subtotal, remiseMontant, total };
+  }
+
+  function renderDevisBuilder(prospect) {
+    const { stepResults } = getStepResults();
+    const statutByNum = {};
+    stepResults.forEach(r => { statutByNum[r.step.num] = r.statut; });
+
+    let html = `<div class="toolbar">
+      <button class="btn btn-outline btn-sm" id="btn-back-to-diag">← Retour au diagnostic</button>
+      <div style="font-size:12.5px;color:var(--gray-500);">Devis pour <strong>${esc(displayName(prospect))}</strong>${prospect.entreprise ? " — " + esc(prospect.entreprise) : ""}</div>
+    </div>
+    <div class="shared-note" style="margin-bottom:14px;">💾 Ce devis est enregistré automatiquement pour ce prospect (étapes cochées, prix, remise) et synchronisé sur sa fiche Google Sheets — vous pourrez le retrouver, le modifier ou le renvoyer plus tard, même depuis un autre ordinateur.</div>`;
+
+    const pack = matchingPack(devisSelection);
+    if (pack) {
+      html += `<div class="pack-suggestion">
+        <span>✔ La sélection actuelle correspond au <strong>${esc(pack.nom)}</strong> — remise habituelle de ${Math.round(pack.remise * 1000) / 10}% déjà appliquée ci-dessous (modifiable).</span>
+      </div>`;
+    }
+
+    html += `<div class="section-title">Étapes à inclure dans le devis</div>`;
+    DIAG_STEPS.forEach(step => {
+      const cfg = pricingConfig.steps[step.num] || { prix: 0, offre: "", duree: "" };
+      const checked = !!devisSelection[step.num];
+      const statut = statutByNum[step.num];
+      const statutColor = statut === "Acquis" ? "#4C8A5E" : statut === "Partiel" ? "#E0A030" : statut === "Manquant" ? "#C0504D" : "#B8B8C0";
+      html += `<div class="devis-line ${checked ? "" : "excluded"}">
+        <input type="checkbox" data-devis-check="${step.num}" ${checked ? "checked" : ""}>
+        <div class="devis-line-body">
+          <div class="devis-line-title">
+            Étape ${step.num} — ${esc(step.name)}
+            <span class="badge" style="background:${PRIO_COLOR[step.priorite]}">${step.priorite}</span>
+            ${statut ? `<span class="badge" style="background:${statutColor}">${statut}</span>` : ""}
+          </div>
+          <div class="devis-line-offre">${esc(cfg.offre)} — ${esc(cfg.duree)}</div>
+        </div>
+        <div class="devis-line-price">
+          <input type="number" min="0" step="1000" data-devis-price="${step.num}" value="${devisPrices[step.num] ?? cfg.prix}">
+          <span style="font-size:11.5px;color:var(--gray-500);">FCFA</span>
+        </div>
+      </div>`;
+    });
+
+    const { subtotal, remiseMontant, total } = computeDevisTotals();
+    html += `<div class="devis-summary">
+      <div class="devis-summary-row"><span>Sous-total à la carte</span><strong>${fmtFCFA(subtotal)}</strong></div>
+      <div class="devis-summary-row">
+        <span>Remise appliquée</span>
+        <span class="devis-remise-input"><input type="number" min="0" max="100" step="0.5" id="devis-remise" value="${devisRemisePct}"> % — <span id="devis-remise-montant">${fmtFCFA(remiseMontant)}</span></span>
+      </div>
+      <div class="devis-summary-row total"><span>Total à payer</span><span id="devis-total">${fmtFCFA(total)}</span></div>
+    </div>`;
+
+    html += `<div class="devis-actions">
+      <button class="btn btn-gold" id="btn-devis-pdf">📄 Télécharger le devis (PDF)</button>
+      <button class="btn btn-outline" id="btn-devis-whatsapp">📎 Envoyer par WhatsApp (avec le PDF)</button>
+      <button class="btn btn-outline" id="btn-devis-email">Envoyer par email</button>
+      <button class="btn btn-primary" id="btn-devis-save">Enregistrer sur la fiche prospect</button>
+    </div>
+    <div class="wa-send-row" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;">
+      <label style="font-size:12px;color:var(--gray-500);">Numéro WhatsApp utilisé pour l'envoi :</label>
+      <input type="text" id="wa-phone-input" value="${esc(prospect.telephone || "")}" placeholder="Ex : 77 123 45 67" style="padding:6px 8px;border:1px solid var(--gray-300);border-radius:6px;font-size:13px;min-width:180px;">
+      <a id="wa-fallback-link" href="#" target="_blank" rel="noopener noreferrer" style="font-size:12.5px;color:var(--navy);text-decoration:underline;">Ouvrir le lien WhatsApp manuellement →</a>
+    </div>
+    <div class="shared-note" style="margin-top:14px;">📱 Sur téléphone (Android/iPhone) : « Envoyer par WhatsApp » ouvre le menu de partage natif — choisissez WhatsApp et le PDF est déjà joint au message.<br>🖥️ Sur ordinateur : le PDF se télécharge automatiquement et WhatsApp Web s'ouvre avec le texte du devis — il suffit de joindre (📎) le fichier téléchargé (WhatsApp Web ne permet à aucun site d'attacher un fichier à sa place, pour des raisons de sécurité). L'email fonctionne de la même façon.</div>`;
+
+    document.getElementById("gsc-body").innerHTML = html;
+
+    document.getElementById("btn-back-to-diag").addEventListener("click", () => { diagView = "questionnaire"; render(); });
+
+    function refreshTotals() {
+      const t = computeDevisTotals();
+      document.querySelector(".devis-summary-row strong").textContent = fmtFCFA(t.subtotal);
+      document.getElementById("devis-remise-montant").textContent = fmtFCFA(t.remiseMontant);
+      document.getElementById("devis-total").textContent = fmtFCFA(t.total);
+    }
+
+    // Recalcule le lien WhatsApp de secours (toujours cliquable, même si le
+    // bouton principal est bloqué par le navigateur) à partir du numéro saisi.
+    function refreshWaFallbackLink() {
+      const link = document.getElementById("wa-fallback-link");
+      const phoneInput = document.getElementById("wa-phone-input");
+      if (!link || !phoneInput) return;
+      const phone = normalizeWaPhone(phoneInput.value);
+      if (phone) {
+        link.href = "https://wa.me/" + phone + "?text=" + encodeURIComponent(devisSummaryText(prospect));
+        link.style.opacity = "1";
+      } else {
+        link.href = "#";
+        link.style.opacity = "0.5";
+      }
+    }
+    refreshWaFallbackLink();
+    document.getElementById("wa-phone-input").addEventListener("input", refreshWaFallbackLink);
+
+    document.querySelectorAll("[data-devis-check]").forEach(cb => {
+      cb.addEventListener("change", () => {
+        devisSelection[cb.dataset.devisCheck] = cb.checked;
+        persistDiagEntry(prospect.id, { devisSelection: { ...devisSelection }, devisSavedAt: new Date().toISOString() });
+        render();
+      });
+    });
+    document.querySelectorAll("[data-devis-price]").forEach(inp => {
+      inp.addEventListener("input", () => {
+        devisPrices[inp.dataset.devisPrice] = Number(inp.value) || 0;
+        persistDiagEntry(prospect.id, { devisPrices: { ...devisPrices }, devisSavedAt: new Date().toISOString() });
+        refreshTotals();
+        refreshWaFallbackLink();
+      });
+    });
+    document.getElementById("devis-remise").addEventListener("input", (e) => {
+      devisRemisePct = Number(e.target.value) || 0;
+      persistDiagEntry(prospect.id, { devisRemisePct, devisSavedAt: new Date().toISOString() });
+      refreshTotals();
+      refreshWaFallbackLink();
+    });
+
+    document.getElementById("btn-devis-pdf").addEventListener("click", () => generateDevisPDF(prospect));
+    document.getElementById("btn-devis-whatsapp").addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Préparation du PDF…";
+      const phoneInput = document.getElementById("wa-phone-input");
+      try {
+        await sendDevisWhatsApp(prospect, phoneInput ? phoneInput.value : prospect.telephone);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+    });
+    document.getElementById("btn-devis-email").addEventListener("click", () => sendDevisEmail(prospect));
+    document.getElementById("btn-devis-save").addEventListener("click", () => saveDevisToProspect(prospect));
+  }
+
+  function buildDevisLineItems() {
+    const items = [];
+    DIAG_STEPS.forEach(step => {
+      if (!devisSelection[step.num]) return;
+      const cfg = pricingConfig.steps[step.num] || { offre: "", duree: "" };
+      items.push({
+        num: step.num,
+        name: step.name,
+        priorite: step.priorite,
+        offre: cfg.offre,
+        duree: cfg.duree,
+        prix: Number(devisPrices[step.num]) || 0,
+      });
+    });
+    return items;
+  }
+
+  function devisNumero(prospect) {
+    const d = new Date();
+    const datePart = d.toISOString().slice(0, 10).replace(/-/g, "");
+    return "GSC-" + datePart + "-" + String(prospect.id || "").slice(-5).toUpperCase();
+  }
+
+  function devisFileName(prospect) {
+    const base = (prospect.entreprise || prospect.nom || "client").toString()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    return `Devis_GSC_${base || "client"}_${new Date().toISOString().slice(0,10)}.pdf`;
+  }
+
+  function devisSummaryText(prospect) {
+    const items = buildDevisLineItems();
+    const { subtotal, remiseMontant, total } = computeDevisTotals();
+    const pack = matchingPack(devisSelection);
+    let lines = [];
+    lines.push(`Devis GSC Business Center — ${devisNumero(prospect)}`);
+    lines.push(`Client : ${displayName(prospect)}${prospect.entreprise ? " — " + prospect.entreprise : ""}`);
+    lines.push("");
+    lines.push(pack ? `Formule : ${pack.nom}` : "Formule : à la carte");
+    items.forEach(it => lines.push(`• Étape ${it.num} — ${it.name} : ${fmtFCFA(it.prix)}`));
+    lines.push("");
+    lines.push(`Sous-total : ${fmtFCFA(subtotal)}`);
+    if (remiseMontant > 0) lines.push(`Remise (${devisRemisePct}%) : -${fmtFCFA(remiseMontant)}`);
+    lines.push(`Total à payer : ${fmtFCFA(total)}`);
+    lines.push("");
+    lines.push("Devis valable 15 jours — GSC Business Center — +221 78 822 84 16 — contact@gsc_businesscenter.com");
+    return lines.join("\n");
+  }
+
+  function ensurePdfLibsLoaded(timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      (function poll() {
+        const ok = window.jspdf && window.jspdf.jsPDF &&
+          window.jspdf.jsPDF.API && typeof window.jspdf.jsPDF.API.autoTable === "function";
+        if (ok) return resolve();
+        if (Date.now() - start > (timeoutMs || 8000)) return reject(new Error("PDF non chargé"));
+        setTimeout(poll, 150);
+      })();
+    });
+  }
+
+  // Construit le document PDF du devis (sans le télécharger) — réutilisé à la fois
+  // pour le téléchargement classique et pour le partage direct (WhatsApp, etc.).
+  async function buildDevisPDFDoc(prospect) {
+    await ensurePdfLibsLoaded();
+
+    const items = buildDevisLineItems();
+    if (items.length === 0) throw new Error("Sélectionnez au moins une étape pour générer le devis");
+
+    const { subtotal, remiseMontant, total } = computeDevisTotals();
+    const pack = matchingPack(devisSelection);
+    const NAVY = [27, 42, 74];
+    const GOLD = [201, 162, 75];
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFillColor(NAVY[0], NAVY[1], NAVY[2]);
+    doc.rect(0, 0, pageWidth, 80, "F");
+    doc.setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("GSC BUSINESS CENTER", 40, 34);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text("Devis — Méthode GSC en 10 étapes", 40, 52);
+    doc.setFontSize(9);
+    doc.text(`Devis N° ${devisNumero(prospect)}`, pageWidth - 40, 34, { align: "right" });
+    doc.text(`Date : ${new Date().toLocaleDateString("fr-FR")}`, pageWidth - 40, 48, { align: "right" });
+    doc.text("Validité : 15 jours", pageWidth - 40, 62, { align: "right" });
+
+    // Client block
+    let y = 104;
+    doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Client", 40, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    y += 16;
+    doc.text(`${displayName(prospect)}${prospect.entreprise ? " — " + prospect.entreprise : ""}`, 40, y);
+    y += 14;
+    if (prospect.secteur) { doc.text(`Secteur : ${prospect.secteur}`, 40, y); y += 14; }
+    if (prospect.telephone) { doc.text(`Téléphone : ${prospect.telephone}`, 40, y); y += 14; }
+    if (prospect.email) { doc.text(`Email : ${prospect.email}`, 40, y); y += 14; }
+
+    if (pack) {
+      y += 6;
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(GOLD[0]*0.6, GOLD[1]*0.6, GOLD[2]*0.6);
+      doc.text(`Formule proposée : ${pack.nom}`, 40, y);
+      doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.setFont("helvetica", "normal");
+      y += 10;
+    }
+
+    // Table
+    const rows = items.map(it => [
+      "Étape " + it.num,
+      it.name + (it.priorite ? " (" + it.priorite + ")" : ""),
+      it.offre + (it.duree ? " — " + it.duree : ""),
+      fmtFCFA_PDF(it.prix),
+    ]);
+
+    doc.autoTable({
+      startY: y + 14,
+      head: [["Étape", "Nom", "Offre / Livrables", "Prix"]],
+      body: rows,
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 6, textColor: [27, 42, 74] },
+      headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [247, 247, 248] },
+      columnStyles: {
+        0: { cellWidth: 55 },
+        1: { cellWidth: 120 },
+        2: { cellWidth: 220 },
+        3: { cellWidth: 70, halign: "right" },
+      },
+      margin: { left: 40, right: 40 },
+    });
+
+    let finalY = doc.lastAutoTable.finalY + 20;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    if (finalY > pageHeight - 140) { doc.addPage(); finalY = 60; }
+
+    // Summary
+    // colGap = largeur réservée entre le début du libellé et l'ascenseur droit des montants,
+    // pour éviter que "Sous-total à la carte" / "Total à payer" ne touchent les montants.
+    const sumX = pageWidth - 40;
+    const colGap = 230;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Sous-total à la carte", sumX - colGap, finalY, { align: "left" });
+    doc.text(fmtFCFA_PDF(subtotal), sumX, finalY, { align: "right" });
+    finalY += 18;
+    if (remiseMontant > 0) {
+      doc.text(`Remise (${devisRemisePct}%)`, sumX - colGap, finalY, { align: "left" });
+      doc.text("-" + fmtFCFA_PDF(remiseMontant), sumX, finalY, { align: "right" });
+      finalY += 18;
+    }
+    doc.setDrawColor(GOLD[0], GOLD[1], GOLD[2]);
+    doc.line(sumX - colGap, finalY - 4, sumX, finalY - 4);
+    doc.setFillColor(245, 237, 216);
+    doc.rect(sumX - colGap - 10, finalY, colGap + 10, 28, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+    doc.text("Total à payer", sumX - colGap, finalY + 18, { align: "left" });
+    doc.text(fmtFCFA_PDF(total), sumX, finalY + 18, { align: "right" });
+
+    // Footer
+    const footY = pageHeight - 50;
+    doc.setDrawColor(215, 215, 220);
+    doc.line(40, footY - 14, pageWidth - 40, footY - 14);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(120, 120, 128);
+    doc.text("GSC Business Center — Tél : +221 78 822 84 16 — contact@gsc_businesscenter.com — www.gsc_businesscenter.com", 40, footY);
+    doc.text("Conditions : devis valable 15 jours. Paiement selon modalités convenues avec votre consultant.", 40, footY + 12);
+
+    return doc;
+  }
+
+  async function generateDevisPDF(prospect) {
+    let doc;
+    try {
+      doc = await buildDevisPDFDoc(prospect);
+    } catch (e) {
+      showToast(e && e.message ? e.message : "Impossible de générer le PDF — vérifiez votre connexion internet");
+      return;
+    }
+    doc.save(devisFileName(prospect));
+    showToast("Devis PDF téléchargé");
+  }
+
+  // Met le numéro du prospect au format international attendu par wa.me
+  // (sans quoi le lien WhatsApp ne s'ouvre pas ou pointe vers un contact invalide).
+  // IMPORTANT : le backend Google Sheets peut parfois renvoyer un numéro comme
+  // un NOMBRE plutôt qu'un texte (ex. après un import) — String(raw) évite un
+  // plantage (.replace n'existe pas sur un Number) qui bloquait tout l'onglet Messages.
+  function normalizeWaPhone(raw) {
+    let digits = String(raw ?? "").replace(/[^0-9]/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("00")) digits = digits.slice(2);
+    // Certains numéros sont saisis avec un 0 initial par habitude (ex. 077 123 45 67)
+    if (!digits.startsWith("221") && digits.startsWith("0")) digits = digits.slice(1);
+    // Numéro sénégalais à 9 chiffres (mobile 7x ou fixe 3x) ou 8 chiffres sans indicatif
+    if (!digits.startsWith("221") && (digits.length === 9 || digits.length === 8)) digits = "221" + digits;
+    // Un numéro international valide fait entre 10 et 13 chiffres ; sinon on considère qu'il est invalide
+    return (digits.length >= 10 && digits.length <= 13) ? digits : "";
+  }
+
+  // Ouvre une URL dans un nouvel onglet via un lien <a> simulé plutôt que
+  // window.open() — plus fiable face aux bloqueurs de pop-up et aux navigateurs
+  // mobiles/webviews qui bloquent silencieusement window.open().
+  function openUrlInNewTab(url) {
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return true;
+    } catch (e) {
+      console.error("Erreur ouverture onglet :", e);
+      return false;
+    }
+  }
+
+  // Force le téléchargement d'un Blob (utilisé pour le PDF en repli desktop).
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  // Envoie le devis PAR WhatsApp avec le PDF réellement joint quand c'est possible :
+  //  - Sur mobile (Android/iOS récents) : utilise le partage natif du navigateur
+  //    (Web Share API avec fichier), qui ouvre le sélecteur de partage du téléphone —
+  //    l'utilisateur choisit WhatsApp et le PDF est déjà attaché au message.
+  //  - Sur desktop (pas de partage de fichier natif) : le PDF est téléchargé
+  //    automatiquement ET WhatsApp Web s'ouvre avec le texte du devis pré-rempli ;
+  //    il suffit alors de joindre le fichier qui vient d'être téléchargé (WhatsApp
+  //    Web ne permet pas à un site externe d'attacher un fichier à sa place, c'est
+  //    une restriction de sécurité de WhatsApp, pas de cette plateforme).
+  async function sendDevisWhatsApp(prospect, phoneRaw) {
+    try {
+      const items = buildDevisLineItems();
+      if (items.length === 0) { showToast("Sélectionnez au moins une étape"); return; }
+
+      const text = devisSummaryText(prospect);
+      const fileName = devisFileName(prospect);
+
+      let doc;
+      try {
+        doc = await buildDevisPDFDoc(prospect);
+      } catch (e) {
+        showToast(e && e.message ? e.message : "Impossible de générer le PDF du devis");
+        return;
+      }
+      const pdfBlob = doc.output("blob");
+
+      // 1) Partage natif avec fichier (mobile principalement)
+      if (navigator.share && navigator.canShare) {
+        try {
+          const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], text, title: "Devis GSC Business Center" });
+            showToast("Partage lancé — choisissez WhatsApp dans la liste");
+            return;
+          }
+        } catch (shareErr) {
+          if (shareErr && shareErr.name === "AbortError") return; // l'utilisateur a annulé le partage
+          console.warn("Partage natif indisponible, repli sur téléchargement + lien WhatsApp", shareErr);
+        }
+      }
+
+      // 2) Repli desktop : téléchargement du PDF + ouverture de WhatsApp avec le texte
+      downloadBlob(pdfBlob, fileName);
+
+      const phone = normalizeWaPhone(phoneRaw !== undefined ? phoneRaw : prospect.telephone);
+      if (!phone) {
+        showToast("PDF téléchargé — ajoutez un numéro WhatsApp valide ci-dessus pour aussi ouvrir la conversation");
+        const field = document.getElementById("wa-phone-input");
+        if (field) field.focus();
+        return;
+      }
+      const url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(text);
+      const ok = openUrlInNewTab(url);
+      showToast(ok
+        ? "PDF téléchargé + WhatsApp ouvert — joignez le fichier téléchargé (📎) au message"
+        : "PDF téléchargé — ouvrez WhatsApp via le lien manuel ci-dessus et joignez le fichier (📎)");
+    } catch (err) {
+      console.error("Erreur envoi WhatsApp :", err);
+      showToast("Erreur lors de l'envoi WhatsApp — utilisez le lien manuel ci-dessus, ou vérifiez la console (F12)");
+    }
+  }
+
+  function sendDevisEmail(prospect) {
+    const items = buildDevisLineItems();
+    if (items.length === 0) { showToast("Sélectionnez au moins une étape"); return; }
+    const subject = "Votre devis GSC Business Center — " + devisNumero(prospect);
+    const body = devisSummaryText(prospect);
+    const url = "mailto:" + encodeURIComponent(prospect.email || "") +
+      "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+    window.location.href = url;
+  }
+
+  async function saveDevisToProspect(prospect) {
+    const items = buildDevisLineItems();
+    if (items.length === 0) { showToast("Sélectionnez au moins une étape avant d'enregistrer"); return; }
+    const { total } = computeDevisTotals();
+    const pack = matchingPack(devisSelection);
+    await flushDiagSync(prospect.id); // s'assure que le devis courant est bien dans prospects[idx].notes avant d'y ajouter la ligne
+    const idx = prospects.findIndex(p => p.id === prospect.id);
+    if (idx === -1) return;
+
+    const label = pack ? pack.nom : items.map(it => "Étape " + it.num).join(", ");
+    const note = `[Devis ${new Date().toISOString().slice(0,10)}] ${devisNumero(prospect)} — ${label} — Total : ${fmtFCFA(total)}`;
+    appendNoteLine(prospects[idx], note);
+    prospects[idx].statut = "Devis envoyé";
+    prospects[idx].prochaineAction = "Relancer le devis " + devisNumero(prospect) + " sous 5 jours";
+    prospects[idx].dateDerniereAction = new Date().toISOString().slice(0, 10);
+    render();
+    const ok = await persistProspect(prospects[idx]);
+    if (ok) showToast("Devis enregistré sur la fiche prospect");
+    render();
+  }
+
+  // =========================================================
+  // RENDER: TARIFS (grille tarifaire modifiable)
+  // =========================================================
+  function renderTarifs() {
+    let html = `<div class="shared-note">💾 Ces tarifs sont enregistrés dans ce navigateur (pas dans Google Sheets) — chaque poste qui utilise cette plateforme peut avoir ses propres tarifs tant qu'ils ne sont pas synchronisés manuellement.</div>`;
+
+    html += `<div class="section-title">Prix par étape (à la carte)</div>`;
+    html += `<div class="tarif-row head"><span>Étape</span><span>Priorité</span><span>Offre / Livrables</span><span>Prix (FCFA)</span></div>`;
+    DIAG_STEPS.forEach(step => {
+      const cfg = pricingConfig.steps[step.num] || { prix: 0, offre: "", duree: "" };
+      html += `<div class="tarif-row">
+        <span>Étape ${step.num} — ${esc(step.name)}</span>
+        <span><span class="badge" style="background:${PRIO_COLOR[step.priorite]}">${step.priorite}</span></span>
+        <span style="color:var(--gray-700);">${esc(cfg.offre)}</span>
+        <input type="number" min="0" step="1000" data-tarif-step="${step.num}" value="${cfg.prix}">
+      </div>`;
+    });
+
+    const total = DIAG_STEPS.reduce((a, s) => a + ((pricingConfig.steps[s.num] || {}).prix || 0), 0);
+    html += `<div class="tarif-row" style="font-weight:700;background:var(--gray-50);"><span>TOTAL — accompagnement à la carte (10 étapes)</span><span></span><span></span><span>${fmtFCFA(total)}</span></div>`;
+
+    html += `<div class="section-title">Packs et remises</div>`;
+    Object.entries(pricingConfig.packs).forEach(([key, pack]) => {
+      const subtotal = pack.steps.reduce((a, n) => a + ((pricingConfig.steps[n] || {}).prix || 0), 0);
+      const prixPack = Math.round(subtotal * (1 - pack.remise));
+      html += `<div class="pack-config-card">
+        <div>
+          <div class="pc-name">${esc(pack.nom)}</div>
+          <div class="pc-steps">Étapes : ${pack.steps.join(", ")} — sous-total à la carte : ${fmtFCFA(subtotal)}</div>
+        </div>
+        <div class="pc-fields">
+          <div class="pc-field">
+            <label>Remise (%)</label>
+            <input type="number" min="0" max="100" step="0.5" data-tarif-pack-remise="${key}" value="${Math.round(pack.remise * 1000) / 10}">
+          </div>
+          <div class="pc-field">
+            <label>Prix du pack</label>
+            <div style="font-weight:700;color:var(--navy);padding:6px 0;">${fmtFCFA(prixPack)}</div>
+          </div>
+        </div>
+      </div>`;
+    });
+
+    html += `<div class="devis-actions" style="margin-top:18px;">
+      <button class="btn btn-gold" id="btn-tarifs-save">Enregistrer les tarifs</button>
+      <button class="btn btn-outline" id="btn-tarifs-reset">Réinitialiser aux valeurs par défaut</button>
+    </div>`;
+
+    document.getElementById("gsc-body").innerHTML = html;
+
+    document.getElementById("btn-tarifs-save").addEventListener("click", () => {
+      document.querySelectorAll("[data-tarif-step]").forEach(inp => {
+        const n = inp.dataset.tarifStep;
+        if (!pricingConfig.steps[n]) pricingConfig.steps[n] = { prix: 0, offre: "", duree: "" };
+        pricingConfig.steps[n].prix = Number(inp.value) || 0;
+      });
+      document.querySelectorAll("[data-tarif-pack-remise]").forEach(inp => {
+        const k = inp.dataset.tarifPackRemise;
+        if (pricingConfig.packs[k]) pricingConfig.packs[k].remise = (Number(inp.value) || 0) / 100;
+      });
+      const ok = savePricingConfig(pricingConfig);
+      showToast(ok ? "Tarifs enregistrés" : "Impossible d'enregistrer (stockage local indisponible)");
+      render();
+    });
+
+    document.getElementById("btn-tarifs-reset").addEventListener("click", () => {
+      if (!confirm("Réinitialiser tous les prix et remises aux valeurs par défaut de la grille tarifaire GSC ?")) return;
+      pricingConfig = defaultPricingConfig();
+      savePricingConfig(pricingConfig);
+      showToast("Tarifs réinitialisés");
+      render();
+    });
+  }
+
+  // =========================================================
+  // CONFIG / SYNC SCREENS
+  // =========================================================
+  function renderConfigMissing() {
+    document.getElementById("gsc-tabs").innerHTML = "";
+    document.getElementById("gsc-body").innerHTML = `
+      <div class="diag-result-box" style="background:#FFF3CD;border-color:#E0A030;">
+        <div class="dr-line"><span class="dr-label">Configuration requise avant la première utilisation.</span></div>
+        <div class="dr-line">Ce fichier doit être connecté à votre backend Google Sheets pour enregistrer les données de façon permanente.</div>
+      </div>
+      <div class="section-title">Étapes à suivre</div>
+      <ol style="font-size:13px;line-height:1.9;color:var(--navy);padding-left:20px;">
+        <li>Ouvrez le fichier <strong>GSC_Backend_AppsScript.gs</strong> fourni séparément et suivez les instructions d'installation en haut du fichier (déploiement en tant qu'Application Web depuis Google Sheets).</li>
+        <li>Une fois déployé, copiez l'URL obtenue (elle ressemble à <code>https://script.google.com/macros/s/XXXXX/exec</code>).</li>
+        <li>Ouvrez ce fichier HTML avec un éditeur de texte (Bloc-notes, TextEdit, VS Code…).</li>
+        <li>Cherchez la ligne <code>const WEBAPP_URL = "REMPLACEZ_PAR_VOTRE_URL_WEBAPP";</code> et remplacez le texte entre guillemets par votre URL.</li>
+        <li>Enregistrez le fichier et rouvrez-le dans votre navigateur — la plateforme se connectera automatiquement.</li>
+      </ol>
+      <div class="shared-note">Une fois configuré, ce même fichier peut être partagé avec toute votre équipe : tout le monde travaillera sur les mêmes données, stockées dans votre feuille Google Sheets.</div>
+    `;
+  }
+
+  // =========================================================
+  // RENDER: MESSAGES (relance & marketing)
+  // =========================================================
+  function renderMessages() {
+    const stages = STATUTS.map(s => s.id).filter(id => id !== "Signé / Client");
+    if (!msgStage || !stages.includes(msgStage)) msgStage = stages[0];
+    const variants = MESSAGE_TEMPLATES[msgStage] || [];
+    if (!msgVariantId || !variants.find(v => v.id === msgVariantId)) msgVariantId = variants.length ? variants[0].id : null;
+    const variant = variants.find(v => v.id === msgVariantId);
+    const editKey = msgStage + "|" + msgVariantId;
+    const currentText = msgEditText[editKey] !== undefined ? msgEditText[editKey] : (variant ? variant.text : "");
+
+    const stageProspects = prospects
+      .filter(p => p.statut === msgStage)
+      .sort((a, b) => String(b.dateSubmission || "").localeCompare(String(a.dateSubmission || "")));
+
+    const stageOptions = stages.map(id =>
+      `<option value="${esc(id)}" ${msgStage === id ? "selected" : ""}>${esc(id)} (${prospects.filter(p => p.statut === id).length})</option>`
+    ).join("");
+
+    const variantButtons = variants.map(v =>
+      `<button class="btn ${v.id === msgVariantId ? "btn-primary" : "btn-outline"}" data-variant="${esc(v.id)}" style="font-size:12.5px;padding:6px 12px;">${esc(v.label)}</button>`
+    ).join("");
+
+    let rows = "";
+    if (stageProspects.length === 0) {
+      rows = `<tr><td colspan="4"><div class="empty-state">Aucun prospect à ce statut pour le moment.</div></td></tr>`;
+    } else {
+      stageProspects.forEach(p => {
+        const phoneOk = !!normalizeWaPhone(p.telephone);
+        rows += `<tr>
+          <td><strong>${esc(displayName(p))}</strong>${p.entreprise && p.nom ? `<br><span style="color:var(--gray-500)">${esc(p.entreprise)}</span>` : ""}</td>
+          <td>${esc(p.telephone || "—")}</td>
+          <td>${esc(p.dateDerniereAction || "—")}</td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" data-preview="${esc(p.id)}" title="Aperçu du message">👁</button>
+              <button class="btn btn-primary" data-send="${esc(p.id)}" style="font-size:12px;padding:5px 10px;" ${phoneOk ? "" : "disabled title='Numéro WhatsApp invalide'"}>📱 Envoyer WhatsApp</button>
+            </div>
+          </td>
+        </tr>`;
+      });
+    }
+
+    document.getElementById("gsc-body").innerHTML = `
+      <div class="toolbar">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <select class="filter-select" id="msg-stage-select">${stageOptions}</select>
+          <div style="display:flex;gap:6px;">${variantButtons}</div>
+        </div>
+        <div style="font-size:11.5px;color:var(--gray-500);font-style:italic;">« Signé / Client » n'apparaît pas ici — ces prospects n'ont plus besoin de relance.</div>
+      </div>
+      <div class="form-field full" style="margin-bottom:14px;">
+        <label>Modèle de message — ${esc(msgStage)} · ${esc(variant ? variant.label : "")}</label>
+        <textarea id="msg-template-text" style="min-height:170px;font-family:inherit;">${esc(currentText)}</textarea>
+        <div style="font-size:11.5px;color:var(--gray-500);margin-top:4px;">
+          Variables : <code>{{prenom}}</code> <code>{{entreprise}}</code> <code>{{consultant}}</code> <code>{{lien_calendly}}</code> <code>{{whatsapp_gsc}}</code>
+          — modifiez librement le texte, il sera utilisé tel quel pour les envois ci-dessous.
+        </div>
+        <div style="margin-top:8px;">
+          <button class="btn btn-outline" id="msg-copy-template" style="font-size:12.5px;">📋 Copier le modèle (brut)</button>
+          <button class="btn btn-outline" id="msg-reset-template" style="font-size:12.5px;">↺ Réinitialiser le modèle</button>
+        </div>
+      </div>
+      <div class="gsc-table-wrap">
+        <table class="gsc-table">
+          <thead><tr><th>Prospect</th><th>Téléphone</th><th>Dernière action</th><th>Actions</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+
+    document.getElementById("msg-stage-select").addEventListener("change", e => { msgStage = e.target.value; msgVariantId = null; render(); });
+    document.querySelectorAll("[data-variant]").forEach(b => b.addEventListener("click", () => { msgVariantId = b.dataset.variant; render(); }));
+
+    const textarea = document.getElementById("msg-template-text");
+    textarea.addEventListener("input", e => { msgEditText[editKey] = e.target.value; });
+
+    document.getElementById("msg-copy-template").addEventListener("click", () => copyTextToClipboard(textarea.value, "Modèle copié"));
+    document.getElementById("msg-reset-template").addEventListener("click", () => {
+      delete msgEditText[editKey];
+      render();
+    });
+
+    document.querySelectorAll("[data-preview]").forEach(b => b.addEventListener("click", () => {
+      const p = prospects.find(x => x.id === b.dataset.preview);
+      if (!p) return;
+      alert(personalizeMessage(textarea.value, p));
+    }));
+    document.querySelectorAll("[data-send]").forEach(b => b.addEventListener("click", () => {
+      sendMessageWhatsApp(b.dataset.send, textarea.value, variant ? variant.label : msgVariantId);
+    }));
+  }
+
+  function renderSyncBadge() {
+    let text = "";
+    let color = "#8A8A93";
+    if (configMissing) { text = "Non configuré"; color = "#E0A030"; }
+    else if (syncing) { text = "Synchronisation…"; color = "#E0A030"; }
+    else if (loadError) { text = "Hors ligne — dernière tentative en erreur"; color = "#C0504D"; }
+    else if (lastSync) { text = "Synchronisé à " + lastSync.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); color = "#4C8A5E"; }
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;">
+      <span style="width:7px;height:7px;border-radius:50%;background:${color};display:inline-block;"></span>
+      <span style="color:#C9D2E3;">${text}</span>
+      <button class="icon-btn" id="btn-refresh" title="Actualiser" style="background:rgba(255,255,255,.15);color:#fff;">⟳</button>
+    </div>`;
+  }
+
+  // =========================================================
+  // MAIN RENDER
+  // =========================================================
+  function render() {
+    // sync badge in header
+    const badgeHost = document.getElementById("gsc-sync-badge");
+    if (badgeHost) {
+      badgeHost.innerHTML = renderSyncBadge();
+      const btn = document.getElementById("btn-refresh");
+      if (btn) btn.addEventListener("click", () => loadData(false));
+    }
+
+    if (!loaded) {
+      document.getElementById("gsc-tabs").innerHTML = "";
+      document.getElementById("gsc-body").innerHTML = `<div class="empty-state">Chargement des données…</div>`;
+      return;
+    }
+    if (configMissing) { renderConfigMissing(); return; }
+
+    renderTabs();
+    if (loadError) {
+      document.getElementById("gsc-body").innerHTML =
+        `<div class="diag-result-box" style="background:#FBEAEA;border-color:#C0504D;">
+          <div class="dr-line"><span class="dr-label">Impossible de joindre le backend.</span></div>
+          <div class="dr-line">Vérifiez votre connexion internet et que l'URL configurée dans le fichier est correcte, puis cliquez sur ⟳ en haut à droite pour réessayer.</div>
+          <div class="dr-line" style="color:#8A8A93;font-size:11.5px;">Détail technique : ${esc(loadError)}</div>
+        </div>`;
+      return;
+    }
+    try {
+      if (activeTab === "dashboard") renderDashboard();
+      else if (activeTab === "prospects") renderProspects();
+      else if (activeTab === "kanban") renderKanban();
+      else if (activeTab === "diagnostic") renderDiagnostic();
+      else if (activeTab === "tarifs") renderTarifs();
+      else if (activeTab === "messages") renderMessages();
+    } catch (err) {
+      // Filet de sécurité : une donnée inattendue sur UN prospect ne doit plus
+      // jamais bloquer silencieusement tout l'onglet. On affiche l'erreur exacte
+      // (utile pour le diagnostic) au lieu de laisser l'écran figé/vide.
+      console.error("Erreur d'affichage de l'onglet « " + activeTab + " » :", err);
+      document.getElementById("gsc-body").innerHTML = `
+        <div class="diag-result-box" style="background:#FBEAEA;border-color:#C0504D;">
+          <div class="dr-line"><span class="dr-label">Une erreur est survenue lors de l'affichage de cet onglet.</span></div>
+          <div class="dr-line">Vos données ne sont pas perdues. Cliquez sur un autre onglet puis revenez, ou actualisez la page (⟳ en haut à droite). Si le problème persiste, ouvrez la console du navigateur (F12) et partagez le message ci-dessous.</div>
+          <div class="dr-line" style="color:#8A8A93;font-size:11.5px;">Détail technique : ${esc(err && err.message ? err.message : String(err))}</div>
+        </div>`;
+    }
+  }
+
+  loadData();
+  setTimeout(() => flushCAPending(), 4000); // rattrape une éventuelle vente restée en attente lors d'une session précédente
+  setInterval(() => loadData(true), 30000); // actualisation automatique toutes les 30s
+})();
+</script>
